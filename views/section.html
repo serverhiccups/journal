@@ -1,0 +1,31 @@
+<div class="journal-section" id="journal-section-id-<%= id %>">
+	<% if(perms?.write) { %>
+	<form class="journal-form-up journal-control-button" action="/api/sectionUp" method="POST">
+		<input type="hidden" name="id" value="<%= id %>">
+		<input type="submit" value="👆">
+	</form>
+	<form class="journal-form-down journal-control-button" action="/api/sectionDown" method="POST">
+		<input type="hidden" name="id" value="<%= id %>">
+		<input type="submit" value="👇">
+	</form>
+	<% } %>
+	<div class="journal-section-content">
+		<div class="journal-section-content-html">
+			<%- section.html %>
+		</div>
+		<% if(perms?.write) { %>
+		<form id="<%= "update-form-" + id %>" class="journal-section-content-markdown" action="/api/updateSection" method="POST">
+			<input type="hidden" name="id" value="<%= id %>">
+			<textarea class="journal-section-content-editor" name="markdown"><%= section.markdown %></textarea>
+			<input type="submit" value="Update">
+		</form>
+		<% } %>
+	</div>
+	<% if(perms?.write) { %>
+	<button class="journal-control-button journal-button-edit">✍️</button>
+	<form class="journal-control-button journal-form-delete" action="/api/deleteSection" method="POST">
+		<input type="hidden" name="id" value="<%= id %>">
+		<input type="submit" value="❌">
+	</form>
+	<% } %>
+</div>

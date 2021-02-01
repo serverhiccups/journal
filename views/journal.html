@@ -1,0 +1,37 @@
+<html>
+	<head>
+		<meta charset="UTF-8">
+		<title><%= journal.title %></title>
+		<link rel="stylesheet" href="normalize.css">
+		<link rel="stylesheet" href="style.css">
+		<% if(perms?.write) { %>
+		<script src="js/journalEdit.js"></script>
+		<% } %>
+	</head>
+	<body>
+		<div id="nav">
+			<span id="nav-title"><%= journal.title %></span>
+			<% if(perms?.write) { %>
+			<a id="settings-link" href="/settings">⚙️</a>
+			<% } %>
+			<form id="logout-form" class="journal-control-button" action="/api/logout" method="POST">
+				<input type="submit" value="🚪">
+			</form>
+		</div>
+		<div id="journal-content">
+			<div id="journal-goto">
+				<a href="#journal-section-id-<%= journal.sections.length - 1 %>">Go to the latest update 🌀</a>
+			</div>
+			<% journal.sections.forEach((section, i) => { %>
+				<%- include('section.html', { section: section, perms: perms, id: i }) %>
+			<% }) %>
+			<% if(perms?.write) { %>
+			<div id="journal-controls">
+				<form class="journal-form-add journal-control-button" action="/api/createSection" method="POST">
+					<input type="submit" value="+">
+				</form>
+			</div>
+			<% } %>
+		</div>
+	</body>
+</html>

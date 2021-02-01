@@ -1,0 +1,249 @@
+@import "fonts.css";
+
+:root {
+	--column-width: 40rem;
+}
+
+body {
+	font-family: "PT Serif", monospace, serif;
+	font-weight: 400;
+}
+
+#home-content {
+	height: 100vh;
+	width: 100vw;
+	display: flex;
+	flex-direction: column;
+	justify-content: center;
+}
+
+#home-form {
+	align-self: center;
+	flex-grow: 1;
+	display: flex;
+	flex-direction: column;
+	justify-content: center;
+	max-height: 100%;
+	font-family: monospace, serif;
+}
+
+#home-contact {
+	align-self: flex-end;
+	justify-self: end;
+	flex-grow: 0;
+	margin-top: .5rem;
+	margin-right: .5rem;
+}
+
+form {
+	margin-bottom: 0px;
+}
+
+#nav {
+	display: grid;
+	grid-template-columns: auto auto 1.5rem 1.5rem;
+	grid-template-rows: auto;
+	grid-template-areas:
+		"title . settings logout";
+	align-items: center;
+	height: 2rem;
+	width: 100vw;
+	background: #eee;
+	font-weight: 700;
+}
+
+/*#nav > * {*/
+	/*padding-left: 1rem;*/
+	/*padding-right: 1rem;*/
+/*}*/
+
+#journal-content {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+}
+
+#journal-content > div {
+	background: #fafafa;
+}
+
+#journal-controls {
+	width: var(--column-width);
+	display: grid;
+	grid-template-columns: 1.5rem auto;
+	grid-template-rows: 1.5rem;
+	grid-template-areas:
+		"buttonAdd ."
+}
+
+.journal-section {
+	width: var(--column-width);
+	min-height: 1.5rem;
+	border-bottom: 1px solid #ddd;
+	display: grid;
+	grid-template-columns: 1.5rem auto 1.5rem;
+	grid-template-rows: 1.5rem 1.5rem auto;
+	grid-template-areas:
+		"buttonUp content buttonEdit"
+		"buttonDown content buttonDelete"
+		". content .";
+}
+
+.journal-form-up {
+	grid-area: buttonUp;
+	visibility: hidden;
+}
+
+.journal-form-down {
+	grid-area: buttonDown;
+	visibility: hidden;
+}
+
+.journal-form-add {
+	grid-area: buttonAdd;
+}
+
+.journal-button-edit {
+	grid-area: buttonEdit;
+	border: none;
+	background: none;
+	padding: 0px;
+	justify-self: center;
+	align-self:center;
+	visibility: hidden;
+}
+
+.journal-form-delete {
+	grid-area: buttonDelete;
+	border: none;
+	background: none;
+	padding: 0px;
+	justify-self: center;
+	align-self:center;
+	visibility: hidden;
+}
+
+.journal-section-content {
+	grid-area: content;
+}
+
+.journal-control-button {
+	display: grid;
+}
+
+.journal-control-button > input[type="submit"]{
+	border: none;
+	background: none;
+	padding: 0px;
+	justify-self: center;
+	align-self: center;
+}
+
+.journal-section:hover > .journal-form-up {
+	visibility: visible;
+}
+
+.journal-section:hover > .journal-form-down {
+	visibility: visible;
+}
+
+.journal-section:hover > .journal-button-edit {
+	visibility: visible;
+}
+
+.journal-section:hover > .journal-form-delete {
+	visibility: visible;
+}
+
+textarea {
+	font-family: monospace, serif;
+	width: 100%;
+	height: 15rem;
+	resize: none;
+	
+}
+
+.journal-section-content-markdown {
+	/*display: grid;*/
+	display: none;
+	grid-template-columns: auto;
+	grid-template-rows: auto 1.5rem;
+	grid-template-areas:
+		"textarea"
+		"updateButton";
+}
+
+.journal-section-content-markdown > {
+	width: auto;
+}
+
+#settings-link {
+	text-decoration: none;
+	grid-area: settings;
+	justify-self: center;
+}
+
+#logout-form {
+	grid-area: logout;
+
+}
+
+#nav-title {
+	grid-area: title;
+	padding-left: 1rem;
+}
+
+#settings-content {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	width: 100%;
+}
+
+#settings-images {
+	width: var(--column-width);
+	background: #fafafa;
+	border-bottom: 1px solid #ddd;
+}
+
+#settings-images > span {
+	display: block;
+}
+
+.settings-image:nth-of-type(2) {
+	background: #ddd;
+}
+
+#settings-tokens {
+	width: var(--column-width);
+	background: #fafafa;
+}
+
+#settings-tokens > span {
+	display: block;
+}
+
+#journal-goto {
+	border-bottom: 1px solid #ddd;
+	width: var(--column-width);
+	background: #9afc97 !important;
+	height: 1.5rem;
+	display: flex;
+	flex-direction: row;
+	align-items: center;
+	justify-items: flex-start;
+}
+
+#journal-goto > a {
+	margin-left: 1.5rem;
+	color: black;
+}
+
+#home-incorrect {
+	color: red;
+}
+
+.journal-section-content-html img {
+	width: 100%;
+	height: auto;
+}

@@ -1,0 +1,75 @@
+<html>
+	<head>
+		<meta charset="UTF-8">
+		<title>journal</title>
+		<link rel="stylesheet" href="normalize.css">
+		<link rel="stylesheet" href="style.css">
+	</head>
+	<body>
+		<div id="nav">
+			<a href="/journal" id="nav-title"><%= journal.title %></a>
+		</div>
+		<div id="settings-content">
+			<div id="settings-images">
+				<span>images</span>
+				<% images.forEach((image) => { %>
+					<div class="settings-image">
+						<form action="/api/deleteImage" method="POST">
+							<span class="settings-image-name"><%= image %></span>
+							<input type="hidden" name="name" value="<%= image %>">
+							<input type="submit" value="❌">
+						</form>
+					</div>
+				<% }); %>
+				<br/>
+				<span>upload</span>
+				<form action="/api/uploadImage" method="POST" enctype="multipart/form-data">
+					<input type="file" name="image" accept=".png,.jpg,.jpeg,.gif,image/png,image/jpeg,image/gif,image/*">
+					<input type="submit" value="Upload">
+				</form>
+			</div>
+			<div id="settings-tokens">
+				<span>tokens</span>
+				<% for(const [key, value] of tokens) { %>
+				<% if(currentToken != key) { %>
+					<form action="/api/updatePerms" method="POST">
+				<% } %>
+						<span><b><%= key %></b></span>
+				<% if(currentToken != key) { %>
+						<input type="hidden" name="token" value="<%= key %>">
+						<select name="perms">
+							<% if(value.read) { %>
+								<% if(value.write) {%>
+								<option value="readwrite">read + write</option>
+								<option value="none">none</option>
+								<option value="read">read</option>
+								<% } else { %>
+									<option value="read">read</option>
+									<option value="none">none</option>
+									<option value="readwrite">read + write</option>
+								<% } %>
+							<% } else {%>
+								<option value="none">none</option>
+								<option value="read">read</option>
+								<option value="readwrite">read + write</option>
+							<% } %>
+						</select>
+						<input type="text" name="note" value="<%= value.notes == undefined ? "" : value.notes %>">
+						<input type="submit" value="♻️">
+					</form>
+				<% } %>
+				<% } %>
+				<form action="/api/updatePerms" method="POST">
+					<input type="text" name="token" value="<%= Math.random().toString(16).substr(2, 8) %>">
+					<select name="perms">
+						<option value="none">none</option>
+						<option value="read">read</option>
+						<option value="readwrite">read + write</option>
+					</select>
+					<input type="text" name="note" value="">
+					<input type="submit" value="🎉">
+				</form>
+			</div>
+		</div>
+	</body>
+</html>
