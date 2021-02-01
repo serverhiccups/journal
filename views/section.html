@@ -1,12 +1,12 @@
-<div class="journal-section" id="journal-section-id-<%= id %>">
+<div class="journal-section" id="journal-section-id-<%= id %>" tabindex="<%= id %>">
 	<% if(perms?.write) { %>
 	<form class="journal-form-up journal-control-button" action="/api/sectionUp" method="POST">
 		<input type="hidden" name="id" value="<%= id %>">
-		<input type="submit" value="👆">
+		<input type="submit" value="👆" title="Move section up">
 	</form>
 	<form class="journal-form-down journal-control-button" action="/api/sectionDown" method="POST">
 		<input type="hidden" name="id" value="<%= id %>">
-		<input type="submit" value="👇">
+		<input type="submit" value="👇" title="Move section down">
 	</form>
 	<% } %>
 	<div class="journal-section-content">
@@ -22,10 +22,10 @@
 		<% } %>
 	</div>
 	<% if(perms?.write) { %>
-	<button class="journal-control-button journal-button-edit">✍️</button>
+	<button class="journal-control-button journal-button-edit" title="Edit section">✍️</button>
 	<form class="journal-control-button journal-form-delete" action="/api/deleteSection" method="POST">
 		<input type="hidden" name="id" value="<%= id %>">
-		<input type="submit" value="❌">
+		<input type="submit" value="❌" title="Delete section">
 	</form>
 	<% } %>
 </div>

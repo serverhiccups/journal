@@ -1,4 +1,5 @@
-@import "fonts.css";
+/*@import "fonts.css";*/
+@import url('https://fonts.googleapis.com/css2?family=PT+Serif:ital,wght@0,400;0,700;1,400;1,700&display=swap');
 
 :root {
 	--column-width: 40rem;
@@ -7,18 +8,27 @@
 body {
 	font-family: "PT Serif", monospace, serif;
 	font-weight: 400;
+	/*font-size: calc(8pt + .8em);*/
 }
 
 #home-content {
 	height: 100vh;
 	width: 100vw;
-	display: flex;
+	display: grid;
+	grid-template-rows: 33.33333% 33.33333% 33.33333%;
+	grid-template-columns: 100%;
+	grid-template-areas:
+		"contact"
+		"login"
+		".";
 	flex-direction: column;
 	justify-content: center;
 }
 
 #home-form {
+	grid-area: login;
 	align-self: center;
+	justify-self: center;
 	flex-grow: 1;
 	display: flex;
 	flex-direction: column;
@@ -28,7 +38,8 @@ body {
 }
 
 #home-contact {
-	align-self: flex-end;
+	grid-area: contact;
+	align-self: start;
 	justify-self: end;
 	flex-grow: 0;
 	margin-top: .5rem;
@@ -41,12 +52,12 @@ form {
 
 #nav {
 	display: grid;
-	grid-template-columns: auto auto 1.5rem 1.5rem;
+	grid-template-columns: auto auto 2rem 2rem;
 	grid-template-rows: auto;
 	grid-template-areas:
 		"title . settings logout";
 	align-items: center;
-	height: 2rem;
+	height: 2em;
 	width: 100vw;
 	background: #eee;
 	font-weight: 700;
@@ -68,7 +79,8 @@ form {
 }
 
 #journal-controls {
-	width: var(--column-width);
+	max-width: var(--column-width);
+	width: 100%;
 	display: grid;
 	grid-template-columns: 1.5rem auto;
 	grid-template-rows: 1.5rem;
@@ -77,7 +89,8 @@ form {
 }
 
 .journal-section {
-	width: var(--column-width);
+	max-width: var(--column-width);
+	width: 100%;
 	min-height: 1.5rem;
 	border-bottom: 1px solid #ddd;
 	display: grid;
@@ -201,7 +214,8 @@ textarea {
 }
 
 #settings-images {
-	width: var(--column-width);
+	max-width: var(--column-width);
+	width: 100%
 	background: #fafafa;
 	border-bottom: 1px solid #ddd;
 }
@@ -215,7 +229,8 @@ textarea {
 }
 
 #settings-tokens {
-	width: var(--column-width);
+	max-width: var(--column-width);
+	width: 100%
 	background: #fafafa;
 }
 
@@ -225,9 +240,10 @@ textarea {
 
 #journal-goto {
 	border-bottom: 1px solid #ddd;
-	width: var(--column-width);
+	max-width: var(--column-width);
+	width: 100%;
 	background: #9afc97 !important;
-	height: 1.5rem;
+	height: 1.5em;
 	display: flex;
 	flex-direction: row;
 	align-items: center;

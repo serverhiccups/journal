@@ -1,24 +1,24 @@
 @font-face {
 	font-family: "PT Serif";
 	font-weight: 400;
-	src: url("/fonts/PTSerif-Regular.tff"),
+	src: url("fonts/PTSerif-Regular.tff"),
 }
 
 @font-face {
 	font-family: "PT Serif";
 	font-weight: 400;
 	font-style: italic;
-	src: url("/fonts/PTSerif-Italic.tff"),
+	src: url("fonts/PTSerif-Italic.tff"),
 }
 
 @font-face {
 	font-family: "PT Serif";
 	font-weight: 700;
-	src: url("/fonts/PTSerif-Bold.tff"),
+	src: url("fonts/PTSerif-Bold.tff"),
 }
 @font-face {
 	font-family: "PT Serif";
 	font-weight: 700;
 	font-style: italic;
-	src: url("/fonts/PTSerif-BoldItalic.tff"),
+	src: url("fonts/PTSerif-BoldItalic.tff"),
 }
