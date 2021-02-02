@@ -189,17 +189,18 @@ textarea {
 	width: 100%;
 	height: 15rem;
 	resize: none;
-
+	grid-area: textarea;
 }
 
 .journal-section-content-markdown {
 	/*display: grid;*/
 	display: none;
-	grid-template-columns: auto;
-	grid-template-rows: auto 1.5rem;
+	grid-template-columns: 50% 50%;
+	grid-template-rows: 1.5rem auto 1.5rem;
 	grid-template-areas:
-	"textarea"
-	"updateButton";
+	"title date"
+	"textarea textarea"
+	"updateButton updateButton";
 }
 
 .journal-section-content-markdown > {
@@ -284,4 +285,28 @@ textarea {
 video {
 	width: 100%;
 	height: auto;
+}
+
+.titledate {
+	display: block;
+	margin-top: .75em;
+	color: #666;
+	font-style: italic;
+	font-size: .9em;
+}
+
+.titledate + p {
+	margin-top: .5em;
+}
+
+.journal-section-content-markdown-title {
+	grid-area: title;
+}
+
+.journal-section-content-markdown-date {
+	grid-area: date;
+}
+
+.journal-section-content-markdown-submit {
+	grid-area: updateButton;
 }

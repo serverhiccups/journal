@@ -159,7 +159,9 @@ api.post("/sectionDown", (ctx, next) => {
 api.post("/updateSection", (ctx, next) => {
 	if(ctx.session?.perms?.write) {
 		journal.updateSection(ctx.request.body.id, {
-			markdown: ctx.request.body.markdown
+			markdown: ctx.request.body.markdown,
+			title: ctx.request.body.title,
+			date: ctx.request.body.date
 		});
 		ctx.redirect("/")
 	} else {
