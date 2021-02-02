@@ -71,13 +71,7 @@ form {
 	font-weight: 700;
 }
 
-:target:before {
-	content: "";
-	display: block;
-	height: 2em;
-	margin: -10em 0 0;
-	/*grid-area: content;*/
-}
+
 
 /*#nav > * {*/
 /*padding-left: 1rem;*/
