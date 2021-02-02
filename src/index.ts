@@ -228,4 +228,4 @@ app.use(pages.routes());
 
 app.use(serve(path.resolve("./public")));
 
-app.listen(8080);
+app.listen(8080, "127.0.0.1");
