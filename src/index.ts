@@ -61,7 +61,7 @@ api.post("/login", (ctx, next) => {
 	ctx.status= 200;
 	ctx.body = "blah"
 	if(ctx.request.body.token != undefined) {
-		console.log("checking perms")
+		//console.log("checking perms")
 		let perms = tokens.getPerms(ctx.request.body.token);
 		if(perms == undefined || !perms.read) {
 			ctx.session.lastIncorrect = true;
@@ -71,7 +71,7 @@ api.post("/login", (ctx, next) => {
 		ctx.session.lastIncorrect = false;
 		ctx.session.token = ctx.request.body.token
 		ctx.session.perms = perms;
-		console.log("logged in")
+		//console.log("logged in")
 		ctx.redirect("/journal")
 		return;
 	}

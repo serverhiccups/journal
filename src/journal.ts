@@ -52,7 +52,7 @@ export default class JournalManager {
 	}
 
 	removeSection(sectionId: number): RenderedSection {
-		console.log("Removing not id: " + sectionId)
+		//console.log("Removing not id: " + sectionId)
 		return this.db.sections.splice(sectionId, 1)[0];
 	}
 

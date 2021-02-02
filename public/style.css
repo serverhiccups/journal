@@ -5,9 +5,14 @@
 	--column-width: 40rem;
 }
 
+html {
+	/*scroll-behavior: smooth;*/
+}
+
 body {
 	font-family: "PT Serif", monospace, serif;
 	font-weight: 400;
+	/*margin-top: 2rem;*/
 	/*font-size: calc(8pt + .8em);*/
 }
 
@@ -18,9 +23,9 @@ body {
 	grid-template-rows: 33.33333% 33.33333% 33.33333%;
 	grid-template-columns: 100%;
 	grid-template-areas:
-		"contact"
-		"login"
-		".";
+	"contact"
+	"login"
+	".";
 	flex-direction: column;
 	justify-content: center;
 }
@@ -51,11 +56,14 @@ form {
 }
 
 #nav {
+	/*position: sticky;*/
+	/*top: 0px;*/
+	/*right: 0px;*/
 	display: grid;
-	grid-template-columns: auto auto 2rem 2rem;
+	grid-template-columns: auto 2rem 2rem;
 	grid-template-rows: auto;
 	grid-template-areas:
-		"title . settings logout";
+	"title settings logout";
 	align-items: center;
 	height: 2em;
 	width: 100vw;
@@ -63,9 +71,17 @@ form {
 	font-weight: 700;
 }
 
+:target:before {
+	content: "";
+	display: block;
+	height: 2em;
+	margin: -10em 0 0;
+	/*grid-area: content;*/
+}
+
 /*#nav > * {*/
-	/*padding-left: 1rem;*/
-	/*padding-right: 1rem;*/
+/*padding-left: 1rem;*/
+/*padding-right: 1rem;*/
 /*}*/
 
 #journal-content {
@@ -85,7 +101,7 @@ form {
 	grid-template-columns: 1.5rem auto;
 	grid-template-rows: 1.5rem;
 	grid-template-areas:
-		"buttonAdd ."
+	"buttonAdd ."
 }
 
 .journal-section {
@@ -97,9 +113,9 @@ form {
 	grid-template-columns: 1.5rem auto 1.5rem;
 	grid-template-rows: 1.5rem 1.5rem auto;
 	grid-template-areas:
-		"buttonUp content buttonEdit"
-		"buttonDown content buttonDelete"
-		". content .";
+	"buttonUp content buttonEdit"
+	"buttonDown content buttonDelete"
+	". content .";
 }
 
 .journal-form-up {
@@ -173,7 +189,7 @@ textarea {
 	width: 100%;
 	height: 15rem;
 	resize: none;
-	
+
 }
 
 .journal-section-content-markdown {
@@ -182,8 +198,8 @@ textarea {
 	grid-template-columns: auto;
 	grid-template-rows: auto 1.5rem;
 	grid-template-areas:
-		"textarea"
-		"updateButton";
+	"textarea"
+	"updateButton";
 }
 
 .journal-section-content-markdown > {
@@ -215,7 +231,7 @@ textarea {
 
 #settings-images {
 	max-width: var(--column-width);
-	width: 100%
+	width: 100%;
 	background: #fafafa;
 	border-bottom: 1px solid #ddd;
 }
@@ -230,7 +246,7 @@ textarea {
 
 #settings-tokens {
 	max-width: var(--column-width);
-	width: 100%
+	width: 100%;
 	background: #fafafa;
 }
 
@@ -239,6 +255,7 @@ textarea {
 }
 
 #journal-goto {
+	/*padding-top: 2rem;*/
 	border-bottom: 1px solid #ddd;
 	max-width: var(--column-width);
 	width: 100%;
@@ -260,6 +277,11 @@ textarea {
 }
 
 .journal-section-content-html img {
+	width: 100%;
+	height: auto;
+}
+
+video {
 	width: 100%;
 	height: auto;
 }
