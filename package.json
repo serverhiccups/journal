@@ -1,6 +1,6 @@
 {
   "name": "journal",
-  "version": "0.0.1",
+  "version": "1.0.0",
   "description": "A beautifully typeset private journalling website",
   "main": "dist/index.js",
   "scripts": {
