@@ -4,6 +4,7 @@ public/fonts/*
 public/images/*
 tokendb.json
 journaldb.json
+public/widgets.css
 
 # Created by https://www.toptal.com/developers/gitignore/api/macos,linux,node,dotenv
 # Edit at https://www.toptal.com/developers/gitignore?templates=macos,linux,node,dotenv

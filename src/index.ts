@@ -138,8 +138,10 @@ api.post("/createSection", (ctx, next) => {
 
 api.post("/sectionUp", (ctx, next) => {
 	if(ctx.session?.perms?.write) {
-		journal.sectionUp(parseInt(ctx.request.body.id));
-		ctx.redirect("/journal");
+		const newPos = journal.sectionUp(parseInt(ctx.request.body.id));
+		if(newPos != undefined) {
+			ctx.redirect(`/journal#journal-section-id-${newPos}`);
+		} else ctx.redirect("/journal");
 	} else {
 		ctx.status = 403;
 		ctx.body = "Forbidden"
@@ -148,8 +150,10 @@ api.post("/sectionUp", (ctx, next) => {
 
 api.post("/sectionDown", (ctx, next) => {
 	if(ctx.session?.perms?.write) {
-		journal.sectionDown(parseInt(ctx.request.body.id));
-		ctx.redirect("/journal");
+		const newPos = journal.sectionDown(parseInt(ctx.request.body.id));
+		if(newPos != undefined) {
+			ctx.redirect(`/journal#journal-section-id-${newPos}`);
+		} else ctx.redirect("/journal");
 	} else {
 		ctx.status = 403;
 		ctx.body = "Forbidden"
@@ -163,7 +167,7 @@ api.post("/updateSection", (ctx, next) => {
 			title: ctx.request.body.title,
 			date: ctx.request.body.date
 		});
-		ctx.redirect("/")
+		ctx.redirect(`/journal#journal-section-id-${ctx.request.body.id}`)
 	} else {
 		ctx.status = 403;
 		ctx.body = "Forbidden";

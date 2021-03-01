@@ -1,12 +1,13 @@
 /*@import "fonts.css";*/
 @import url('https://fonts.googleapis.com/css2?family=PT+Serif:ital,wght@0,400;0,700;1,400;1,700&display=swap');
+/*@import "widgets.css";*/
 
 :root {
 	--column-width: 40rem;
 }
 
 html {
-	/*scroll-behavior: smooth;*/
+	scroll-behavior: smooth;
 }
 
 body {
@@ -303,4 +304,10 @@ video {
 
 .journal-section-content-markdown-submit {
 	grid-area: updateButton;
+}
+
+.widget {
+	margin-top: 1em;
+	margin-bottom: 1em;
+	width: 100%;
 }

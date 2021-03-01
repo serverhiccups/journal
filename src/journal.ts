@@ -43,8 +43,9 @@ export default class JournalManager {
 		})
 	}
 
-	updateSection(sectionId: number, section: Section) {
+	updateSection(sectionId: number, section: Section): number {
 		this.db.sections[sectionId] = {...section, html: marked(section.markdown)};
+		return sectionId;
 	}
 
 	getSection(sectionId: number): RenderedSection {
@@ -56,18 +57,20 @@ export default class JournalManager {
 		return this.db.sections.splice(sectionId, 1)[0];
 	}
 
-	sectionUp(sectionId: number) {
+	sectionUp(sectionId: number): number {
 		if(sectionId < 0 || sectionId > this.db.sections.length - 1) return;
 		if(sectionId == 0) return; // Can't move an item at the top up.
 		// Swap the elements
 		[this.db.sections[sectionId], this.db.sections[sectionId - 1]] = [this.db.sections[sectionId - 1], this.db.sections[sectionId]]
+		return sectionId - 1;
 	}
 
-	sectionDown(sectionId: number) {
+	sectionDown(sectionId: number): number {
 		if(sectionId < 0 || sectionId > this.db.sections.length - 1) return;
 		if(sectionId == this.db.sections.length - 1) return; // Can't move an item at the bottom down.
 		// Swap the elements
 		[this.db.sections[sectionId], this.db.sections[sectionId + 1]] = [this.db.sections[sectionId + 1], this.db.sections[sectionId]]
+		return sectionId + 1;
 	}
 
 	getAll(): RenderedSection[] {
