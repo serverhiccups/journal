@@ -1,7 +1,9 @@
 # journal
 Journal is a lightweight private blogging service designed to share.
 
-Journal is super fast because readers don't use any client-side js, and editors only load a short (10loc) script.
+Journal is super fast because all client side JS is optional, and all rendering is done server side.
+
+Journal has a feature called 'widgets' that allow posts to contain small javascript interactives and graphics.
 
 Journal uses:
 * Typescript
