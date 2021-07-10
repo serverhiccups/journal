@@ -239,4 +239,5 @@ app.use(pages.routes());
 
 app.use(serve(path.resolve("./public")));
 
-app.listen(8080, "127.0.0.1");
+//@ts-ignore
+app.listen(journal.getJournal().portNumber, "127.0.0.1");
