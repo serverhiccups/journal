@@ -12,7 +12,6 @@ import TokenManager from "./tokens";
 import JournalManager from "./journal";
 
 const app = new koa();
-app.keys = ["MYVERYSECRETKEY"];
 
 const tokens = new TokenManager("./tokendb.json")
 const journal = new JournalManager("./journaldb.json")
@@ -22,7 +21,13 @@ process.on("SIGINT", () => {
 	process.exit(0);
 })
 
-app.use(session(app));
+//@ts-ignore
+app.keys = [ journal.getJournal()["cookieKey"] ]
+
+app.use(session({
+	maxAge: 60 * 1000 * 60 * 60 * 24 // two months
+}, app));
+
 app.use(koaBody({
 	multipart: true
 }));

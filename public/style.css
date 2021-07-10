@@ -8,6 +8,7 @@
 
 html {
 	scroll-behavior: smooth;
+	scroll-padding-top: 3.5rem;
 }
 
 body {
@@ -57,9 +58,9 @@ form {
 }
 
 #nav {
-	/*position: sticky;*/
-	/*top: 0px;*/
-	/*right: 0px;*/
+	position: sticky;
+	top: 0px;
+	right: 0px;
 	display: grid;
 	grid-template-columns: auto 2rem 2rem;
 	grid-template-rows: auto;
@@ -72,12 +73,23 @@ form {
 	font-weight: 700;
 }
 
+#journal-decoration {
+	width: 100vw;
+	height: calc(100vh - 2em);
+	position: fixed;
+	/*background: lightblue;*/
+	top: 2em;
+	left: 0px;
+	z-index: -10;
+}
 
-
-/*#nav > * {*/
-/*padding-left: 1rem;*/
-/*padding-right: 1rem;*/
-/*}*/
+.journal-tree {
+	position: absolute;
+	font-size: 2rem;
+	height: 2rem;
+	max-height: 2rem;
+	width: 2rem;
+}
 
 #journal-content {
 	display: flex;
@@ -252,6 +264,8 @@ textarea {
 
 #journal-goto {
 	/*padding-top: 2rem;*/
+	position: sticky;
+	top: 2rem;
 	border-bottom: 1px solid #ddd;
 	max-width: var(--column-width);
 	width: 100%;
