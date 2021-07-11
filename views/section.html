@@ -1,4 +1,4 @@
-<div class="journal-section" id="journal-section-id-<%= id %>" tabindex="<%= id %>">
+<div class="journal-section" id="journal-section-id-<%= id %>">
 	<% if(perms?.write) { %>
 	<form class="journal-form-up journal-control-button" action="/api/sectionUp" method="POST">
 		<input type="hidden" name="id" value="<%= id %>">
@@ -10,7 +10,7 @@
 	</form>
 	<% } %>
 	<div class="journal-section-content">
-		<div class="journal-section-content-html">
+		<article class="journal-section-content-html">
 			<% if(section.date || section.title) { %>
 				<% if(section.date && section.title) { %>
 					<span class="titledate"><%= section.title + " - " + section.date %></span>
@@ -21,12 +21,12 @@
 				<% } %>
 			<% } %>
 			<%- section.html %>
-		</div>
+		</article>
 		<% if(perms?.write) { %>
 		<form id="<%= "update-form-" + id %>" class="journal-section-content-markdown" action="/api/updateSection" method="POST">
 			<input type="hidden" name="id" value="<%= id %>">
 			<input class="journal-section-content-markdown-title" type="text" name="title" placeholder="Title" value="<%= section.title %>">
-			<input class="journal-section-content-markdown-date"type="text" name="date" placeholder="Date" value="<%= section.date %>">
+			<input class="journal-section-content-markdown-date" type="text" name="date" placeholder="Date" value="<%= section.date %>">
 			<textarea class="journal-section-content-editor" name="markdown"><%= section.markdown %></textarea>
 			<input class="journal-section-content-markdown-submit" type="submit" value="Update">
 		</form>

@@ -7,6 +7,7 @@ import koaBody from "koa-body";
 import views from "koa-views";
 import ratelimit from "koa-ratelimit";
 import fs from "fs";
+import filesize from "file-size";
 
 import TokenManager from "./tokens";
 import JournalManager from "./journal";
@@ -102,9 +103,15 @@ api.post("/updatePerms", (ctx, next) => {
 api.post("/uploadImage", (ctx, next) => {
 	if(ctx.session?.perms?.write) {
 		try {
-			// @ts-ignore
-			const {path, name, type} = ctx.request.files.image;
-			fs.copyFileSync(path, `./public/images/${name}`);
+			let files: any;
+			if(!(ctx.request.files.image instanceof Array)) {
+				files = [ctx.request.files.image];
+			} else files = ctx.request.files.image;
+			files.forEach((file: File) => {
+				// @ts-ignore
+				const {path, name, type} = file;
+				fs.copyFileSync(path, `./public/images/${name}`);
+			});
 			ctx.redirect("/settings");
 		} catch (e) {
 			ctx.status = 500;
@@ -220,7 +227,16 @@ pages.get("/journal", async (ctx, next) => {
 
 pages.get('/settings', async (ctx, next) => {
 	if(ctx.session?.perms?.write) {
-		let images = fs.readdirSync("./public/images/").map((file) => file.toString());
+		let dir = fs.readdirSync("./public/images/", {withFileTypes: true}).filter((f) => {
+			return f.isFile();
+		});
+		dir.sort((a: any, b: any) => {
+			return a.lastModified - b.lastModified;
+		})
+		let images = dir.map((f) => {
+			let stat = fs.statSync("./public/images/" + f.name);
+			return [f.name, new Date(stat.mtimeMs).toLocaleDateString(), new Date(stat.mtimeMs).toLocaleTimeString(), filesize(stat.size).human('si')];
+		})
 		// @ts-ignore
 		await ctx.render("settings", {
 			journal: journal.getJournal(),

@@ -1,5 +1,10 @@
 import fs from "fs";
 import marked from "marked";
+import plugin from "./markedPlugin";
+
+marked.use({
+	renderer: plugin
+});
 
 interface Journal {
 	title: string;

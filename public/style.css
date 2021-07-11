@@ -1,6 +1,4 @@
-/*@import "fonts.css";*/
 @import url('https://fonts.googleapis.com/css2?family=PT+Serif:ital,wght@0,400;0,700;1,400;1,700&display=swap');
-/*@import "widgets.css";*/
 
 :root {
 	--column-width: 40rem;
@@ -14,8 +12,6 @@ html {
 body {
 	font-family: "PT Serif", monospace, serif;
 	font-weight: 400;
-	/*margin-top: 2rem;*/
-	/*font-size: calc(8pt + .8em);*/
 }
 
 #home-content {
@@ -77,7 +73,6 @@ form {
 	width: 100vw;
 	height: calc(100vh - 2em);
 	position: fixed;
-	/*background: lightblue;*/
 	top: 2em;
 	left: 0px;
 	z-index: -10;
@@ -89,6 +84,8 @@ form {
 	height: 2rem;
 	max-height: 2rem;
 	width: 2rem;
+	-webkit-user-select: none;
+	user-select: none;
 }
 
 #journal-content {
@@ -244,11 +241,44 @@ textarea {
 	border-bottom: 1px solid #ddd;
 }
 
-#settings-images > span {
+#settings-images form {
 	display: block;
 }
 
-.settings-image:nth-of-type(2) {
+.settings-image {
+	display: grid;
+	grid-template-columns: 1.5fr 1fr 1fr 1fr;
+	grid-template-rows: 1.5em;
+}
+
+.settings-image form input {
+	font-size: 1rem;
+}
+
+.settings-image form {
+	grid-column: 1 / 2;
+	grid-row: 1 / 2;
+}
+
+.settings-image-date {
+	grid-column: 2 / 3;
+	grid-row: 1 / 2;
+	justify-self: end;
+}
+
+.settings-image-time {
+	grid-column: 3 / 4;
+	grid-row: 1 / 2;
+	justify-self: end;
+}
+
+.settings-image-size {
+	grid-column: 4 / 5;
+	grid-row: 1 / 2;
+	justify-self: end;
+}
+
+.settings-image:nth-of-type(even) {
 	background: #ddd;
 }
 
@@ -286,11 +316,6 @@ textarea {
 	color: red;
 }
 
-.journal-section-content-html img {
-	width: 100%;
-	height: auto;
-}
-
 video {
 	width: 100%;
 	height: auto;
@@ -324,4 +349,26 @@ video {
 	margin-top: 1em;
 	margin-bottom: 1em;
 	width: 100%;
+}
+
+figure {
+	margin: 0;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+}
+
+figure img {
+	width: 100%;
+	height: auto;
+}
+
+figcaption {
+	margin-top: 1rem;
+}
+
+@media (max-width: 44rem) {
+	#journal-goto {
+		margin-top: 4rem;
+	}
 }

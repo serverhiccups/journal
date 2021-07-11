@@ -16,16 +16,19 @@
 				<% images.forEach((image) => { %>
 					<div class="settings-image">
 						<form action="/api/deleteImage" method="POST">
-							<span class="settings-image-name"><%= image %></span>
-							<input type="hidden" name="name" value="<%= image %>">
+							<span class="settings-image-name"><%= image[0] %></span>
+							<input type="hidden" name="name" value="<%= image[0] %>">
 							<input type="submit" value="❌">
 						</form>
+						<span class="settings-image-date"><%= image[1] %></span>
+						<span class="settings-image-time"><%= image[2] %></span>
+						<span class="settings-image-size"><%= image[3] %></span>
 					</div>
 				<% }); %>
 				<br/>
 				<span>upload</span>
 				<form action="/api/uploadImage" method="POST" enctype="multipart/form-data">
-					<input type="file" name="image" accept=".png,.jpg,.jpeg,.gif,image/png,image/jpeg,image/gif,image/*,.mp4,video/mp4,.mov,video/quicktime">
+					<input type="file" name="image" accept=".png,.jpg,.jpeg,.gif,image/png,image/jpeg,image/gif,image/*,.mp4,video/mp4,.mov,video/quicktime" multiple>
 					<input type="submit" value="Upload">
 				</form>
 			</div>
