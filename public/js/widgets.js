@@ -24,12 +24,13 @@ document.addEventListener("DOMContentLoaded", async () => {
 
 			const {default: widgetExport} = await import("/js/widgets/" + wname + ".js");
 			widgetElements.forEach((el) => {
-				if(el.id = wname) {
+				if(el.id == wname) {
 					el.innerHTML = "";
 					widgetExport(el, el.dataset);
 				}
 			})
 		} catch (e) {
+			console.dir(e);
 			errorWidget(el, el.dataset);
 		}
 	})

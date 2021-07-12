@@ -8,6 +8,7 @@ import views from "koa-views";
 import ratelimit from "koa-ratelimit";
 import fs from "fs";
 import filesize from "file-size";
+import range from "@masx200/koa-range";
 
 import TokenManager from "./tokens";
 import JournalManager from "./journal";
@@ -253,6 +254,7 @@ pages.get('/settings', async (ctx, next) => {
 app.use(pages.routes());
 //app.use(pages.allowedMethods());
 
+app.use(range);
 app.use(serve(path.resolve("./public")));
 
 //@ts-ignore

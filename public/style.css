@@ -105,7 +105,8 @@ form {
 	grid-template-columns: 1.5rem auto;
 	grid-template-rows: 1.5rem;
 	grid-template-areas:
-	"buttonAdd ."
+	"buttonAdd .";
+	padding-bottom: env(safe-area-inset-bottom, 0px);
 }
 
 .journal-section {
