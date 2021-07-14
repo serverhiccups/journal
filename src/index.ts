@@ -54,7 +54,8 @@ const apiLimiter = ratelimit({
 	db: ratelimitDb,
 	duration: 1000 * 60 * 60 * 2, // 2 hours
 	errorMessage: "Too many API requests from this IP address. Try again later.",
-	id: (ctx) => ctx.ip,
+	//@ts-ignore
+	id: (ctx) => ctx.headers["x-forwarded-for"] || ctx.ip,
 	max: 5,
 	disableHeader: true,
 	whitelist: (ctx) => {
