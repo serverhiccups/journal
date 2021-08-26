@@ -64,7 +64,7 @@ form {
 	"title settings logout";
 	align-items: center;
 	height: 2em;
-	width: 100vw;
+	width: 100%;
 	background: #eee;
 	font-weight: 700;
 }

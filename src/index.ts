@@ -1,6 +1,6 @@
 import koa from "koa";
 import Router from "koa-router";
-import serve from "koa-static";
+import serve from "koa-better-serve";
 import path from "path";
 import session from "koa-session";
 import koaBody from "koa-body";
@@ -232,13 +232,15 @@ pages.get('/settings', async (ctx, next) => {
 		let dir = fs.readdirSync("./public/images/", {withFileTypes: true}).filter((f) => {
 			return f.isFile();
 		});
-		dir.sort((a: any, b: any) => {
-			return a.lastModified - b.lastModified;
-		})
-		let images = dir.map((f) => {
+		let imagesAndTime = dir.map((f) => {
 			let stat = fs.statSync("./public/images/" + f.name);
-			return [f.name, new Date(stat.mtimeMs).toLocaleDateString(), new Date(stat.mtimeMs).toLocaleTimeString(), filesize(stat.size).human('si')];
+			return [stat.mtimeMs, [f.name, new Date(stat.mtimeMs).toLocaleDateString(), new Date(stat.mtimeMs).toLocaleTimeString(), filesize(stat.size).human('si')]];
 		})
+		imagesAndTime.sort((a: any, b: any) => {
+			return a[0] - b[0];
+		})
+		let images = imagesAndTime.map((i) => i[1]);
+
 		// @ts-ignore
 		await ctx.render("settings", {
 			journal: journal.getJournal(),
@@ -256,7 +258,7 @@ app.use(pages.routes());
 //app.use(pages.allowedMethods());
 
 app.use(range);
-app.use(serve(path.resolve("./public")));
+app.use(serve(path.resolve("./public"), "/"));
 
 //@ts-ignore
 app.listen(journal.getJournal().portNumber, "127.0.0.1");
