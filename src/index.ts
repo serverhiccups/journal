@@ -234,7 +234,7 @@ pages.get('/settings', async (ctx, next) => {
 		});
 		let imagesAndTime = dir.map((f) => {
 			let stat = fs.statSync("./public/images/" + f.name);
-			return [stat.mtimeMs, [f.name, new Date(stat.mtimeMs).toLocaleDateString(), new Date(stat.mtimeMs).toLocaleTimeString(), filesize(stat.size).human('si')]];
+			return [stat.mtimeMs, [f.name, new Date(stat.mtimeMs).toLocaleDateString(["en-NZ", "en-UK", "en-US"]), new Date(stat.mtimeMs).toLocaleTimeString(), filesize(stat.size).human('si')]];
 		})
 		imagesAndTime.sort((a: any, b: any) => {
 			return a[0] - b[0];

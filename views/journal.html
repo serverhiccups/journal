@@ -26,7 +26,7 @@
 		</nav>
 		<main id="journal-content">
 			<div id="journal-goto">
-				<a href="#journal-section-id-<%= journal.sections.length - 1 %>">Go to the latest update 🌀</a>
+				<a href="#journal-section-id-<%= journal.sections.length - 1 %>">Go to the latest update <%= journal.sections[journal.sections.length - 1]?.date ? " (" + journal.sections[journal.sections.length - 1].date + ") ": ""%>🌀</a>
 			</div>
 			<% journal.sections.forEach((section, i) => { %>
 				<%- include('section.html', { section: section, perms: perms, id: i }) %>

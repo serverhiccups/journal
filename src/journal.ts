@@ -1,10 +1,12 @@
 import fs from "fs";
 import marked from "marked";
-import plugin from "./markedPlugin";
+import { imageRenderer, galleryExtension } from "./markedPlugin";
 
 marked.use({
-	renderer: plugin
+	renderer: imageRenderer
 });
+
+marked.use({extensions: [galleryExtension]});
 
 interface Journal {
 	title: string;
