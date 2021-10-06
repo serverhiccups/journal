@@ -87,4 +87,10 @@ export default class JournalManager {
 	getJournal(): Journal {
 		return this.db;
 	}
+
+	updateAll() {
+		for(let i = 0; i < this.db.sections.length; i++) {
+			this.updateSection(i, this.db.sections[i]);
+		}
+	}
 }

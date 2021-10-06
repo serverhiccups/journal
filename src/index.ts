@@ -2,11 +2,13 @@ import koa from "koa";
 import Router from "koa-router";
 import serve from "koa-better-serve";
 import path from "path";
+import archiver from "archiver";
 import session from "koa-session";
 import koaBody from "koa-body";
 import views from "koa-views";
 import ratelimit from "koa-ratelimit";
 import fs from "fs";
+import stream from "stream";
 import filesize from "file-size";
 import range from "@masx200/koa-range";
 
@@ -192,6 +194,45 @@ api.post("/deleteSection", (ctx, next) => {
 	if(ctx.session?.perms?.write) {
 		journal.removeSection(parseInt(ctx.request.body.id));
 		ctx.redirect("/journal");
+	} else {
+		ctx.status = 403;
+		ctx.body = "Forbidden";
+	}
+})
+
+api.post("/updateAllSections", (ctx, next) => {
+	if(ctx.session?.perms?.write) {
+		journal.updateAll();
+		ctx.redirect("/settings");
+	} else {
+		ctx.status = 403;
+		ctx.body = "Forbidden";
+	}
+})
+
+api.get("/downloadBackup", (ctx, next) => {
+	if(ctx.session?.perms?.write) {
+		const archive = archiver('zip', {
+			zlib: { level: 3 }
+		});
+
+		archive.on("error", (err) => {
+			throw err;
+		});
+
+		ctx.type = "application/zip"
+		ctx.attachment("backup.zip")
+
+		const s = new stream.PassThrough()
+		ctx.body = s;
+
+		archive.pipe(s);
+		archive.append(JSON.stringify(journal.getJournal()), { name: "journaldb.json"})
+		archive.directory("./public/images/", "/images");
+
+		archive.finalize();
+
+		ctx.status = 200;
 	} else {
 		ctx.status = 403;
 		ctx.body = "Forbidden";

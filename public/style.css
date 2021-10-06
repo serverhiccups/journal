@@ -293,6 +293,16 @@ textarea {
 	display: block;
 }
 
+#settings-admin {
+	max-width: var(--column-width);
+	width: 100%;
+	background: #fafafa;
+}
+
+#settings-admin > span {
+	display: block;
+}
+
 #journal-goto {
 	/*padding-top: 2rem;*/
 	position: sticky;
