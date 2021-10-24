@@ -239,6 +239,12 @@ api.get("/downloadBackup", (ctx, next) => {
 	}
 })
 
+api.get("/authenticated", async (ctx) => {
+	if(ctx.session?.perms?.read) {
+		ctx.status = 200;
+	} else ctx.status = 403;
+})
+
 app.use(api.routes());
 //app.use(api.allowedMethods());
 
