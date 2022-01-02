@@ -1,6 +1,6 @@
 const imageRenderer = {
-	image(href: string, title: string | null , text: string) {
-		 return `
+	image(href: string, title: string | null, text: string) {
+		return `
 			<figure class="img-container">
 				<img loading="lazy" src="${href}" alt="title">
 				${title != null ? `<figcaption>${title}</figcaption>` : ""}
@@ -16,9 +16,9 @@ const galleryExtension = {
 		return src.match(/^\$\$/)?.index;
 	},
 	tokenizer(src: string, tokens: Array<any>) {
-		const rule = /^(?:\$\$)\n+((.|\n)*)(?:\$\$)+/;
+		const rule = /^(?:\$\$)\n+((.|\n)*?)(?:\$\$)+/;
 		const match = rule.exec(src);
-		if(match) {
+		if (match) {
 			const token = {
 				type: "gallery",
 				raw: match[0],
