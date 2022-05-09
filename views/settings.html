@@ -1,10 +1,11 @@
+<!DOCTYPE html>
 <html>
 	<head>
-		<meta charset="UTF-8">
+		<meta charset="UTF-8" />
 		<title>journal</title>
-		<link rel="stylesheet" href="normalize.css">
-		<link rel="stylesheet" href="style.css">
-		<meta name="viewport" content="width=device-width, initial-scale=1">
+		<link rel="stylesheet" href="normalize.css" />
+		<link rel="stylesheet" href="style.css" />
+		<meta name="viewport" content="width=device-width, initial-scale=1" />
 	</head>
 	<body>
 		<div id="nav">
@@ -14,73 +15,84 @@
 			<div id="settings-images">
 				<span>images</span>
 				<% images.forEach((image) => { %>
-					<div class="settings-image">
-						<form action="/api/deleteImage" method="POST">
-							<span class="settings-image-name"><%= image[0] %></span>
-							<input type="hidden" name="name" value="<%= image[0] %>">
-							<input type="submit" value="❌">
-						</form>
-						<span class="settings-image-date"><%= image[1] %></span>
-						<span class="settings-image-time"><%= image[2] %></span>
-						<span class="settings-image-size"><%= image[3] %></span>
-					</div>
+				<div class="settings-image">
+					<form action="/api/deleteImage" method="POST">
+						<span class="settings-image-name"><%= image[0] %></span>
+						<input type="hidden" name="name" value="<%= image[0] %>" />
+						<input type="submit" value="❌" />
+					</form>
+					<span class="settings-image-date"><%= image[1] %></span>
+					<span class="settings-image-time"><%= image[2] %></span>
+					<span class="settings-image-size"><%= image[3] %></span>
+				</div>
 				<% }); %>
-				<br/>
+				<br />
 				<span>upload</span>
-				<form action="/api/uploadImage" method="POST" enctype="multipart/form-data">
-					<input type="file" name="image" accept=".png,.jpg,.jpeg,.gif,image/png,image/jpeg,image/gif,image/*,.mp4,video/mp4,.mov,video/quicktime" multiple>
-					<input type="submit" value="Upload">
+				<form
+					action="/api/uploadImage"
+					method="POST"
+					enctype="multipart/form-data"
+				>
+					<input
+						type="file"
+						name="image"
+						accept=".png,.jpg,.jpeg,.gif,image/png,image/jpeg,image/gif,image/*,.mp4,video/mp4,.mov,video/quicktime"
+						multiple
+					/>
+					<input type="submit" value="Upload" />
 				</form>
 			</div>
 			<div id="settings-admin">
 				<span>admin</span>
 				<form method="POST" action="/api/updateAllSections">
-					<input type="submit" value="Rerender all sections">
+					<input type="submit" value="Rerender all sections" />
 				</form>
 				<form method="GET" action="/api/downloadBackup">
-					<input type="submit" value="Download Backup">
+					<input type="submit" value="Download Backup" />
 				</form>
 			</div>
 			<div id="settings-tokens">
 				<span>tokens</span>
-				<% for(const [key, value] of tokens) { %>
-				<% if(currentToken != key) { %>
-					<form action="/api/updatePerms" method="POST">
-				<% } %>
-						<span><b><%= key %></b></span>
-				<% if(currentToken != key) { %>
-						<input type="hidden" name="token" value="<%= key %>">
-						<select name="perms">
-							<% if(value.read) { %>
-								<% if(value.write) {%>
-								<option value="readwrite">read + write</option>
-								<option value="none">none</option>
-								<option value="read">read</option>
-								<% } else { %>
-									<option value="read">read</option>
-									<option value="none">none</option>
-									<option value="readwrite">read + write</option>
-								<% } %>
-							<% } else {%>
-								<option value="none">none</option>
-								<option value="read">read</option>
-								<option value="readwrite">read + write</option>
-							<% } %>
-						</select>
-						<input type="text" name="notes" value="<%= value.notes == undefined ? "" : value.notes %>">
-						<input type="submit" value="♻️">
-					</form>
-				<% } %>
-				<% } %>
+				<% for(const [key, value] of tokens) { %> <% if(currentToken != key) {
+				%>
 				<form action="/api/updatePerms" method="POST">
-					<input type="text" name="token" value="<%= Math.random().toString(16).substr(2, 8) %>">
+					<% } %>
+					<span><b><%= key %></b></span>
+					<% if(currentToken != key) { %>
+					<input type="hidden" name="token" value="<%= key %>" />
+					<select name="perms">
+						<% if(value.read) { %> <% if(value.write) {%>
+						<option value="readwrite">read + write</option>
+						<option value="none">none</option>
+						<option value="read">read</option>
+						<% } else { %>
+						<option value="read">read</option>
+						<option value="none">none</option>
+						<option value="readwrite">read + write</option>
+						<% } %> <% } else {%>
+						<option value="none">none</option>
+						<option value="read">read</option>
+						<option value="readwrite">read + write</option>
+						<% } %>
+					</select>
+					<input type="text" name="notes" value="<%= value.notes == undefined ?
+					"" : value.notes %>">
+					<input type="submit" value="♻️" />
+				</form>
+				<% } %> <% } %>
+				<form action="/api/updatePerms" method="POST">
+					<input
+						type="text"
+						name="token"
+						value="<%= Math.random().toString(16).substr(2, 8) %>"
+					/>
 					<select name="perms">
 						<option value="none">none</option>
 						<option value="read">read</option>
 						<option value="readwrite">read + write</option>
 					</select>
-					<input type="text" name="notes" value="">
-					<input type="submit" value="🎉">
+					<input type="text" name="notes" value="" />
+					<input type="submit" value="🎉" />
 				</form>
 			</div>
 		</div>

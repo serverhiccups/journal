@@ -1,13 +1,17 @@
+<!DOCTYPE html>
 <html>
 	<head>
-		<meta charset="UTF-8">
+		<meta charset="UTF-8" />
 		<title><%= journal.title %></title>
-		<link rel="stylesheet" href="normalize.css">
-		<link rel="stylesheet" href="style.css">
-		<meta name="viewport" content="width=device-width, initial-scale=1">
+		<link rel="stylesheet" href="normalize.css" />
+		<link rel="stylesheet" href="style.css" />
+		<meta name="viewport" content="width=device-width, initial-scale=1" />
 		<script type="module" src="js/widgets.js"></script>
 		<% if(journal.faviconEmoji){ %>
-		<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22><%- journal.faviconEmoji %></text></svg>">
+		<link
+			rel="icon"
+			href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22><%- journal.faviconEmoji %></text></svg>"
+		/>
 		<% } %>
 		<script src="js/trees.js"></script>
 		<% if(perms?.write) { %>
@@ -20,21 +24,33 @@
 			<% if(perms?.write) { %>
 			<a id="settings-link" href="/settings" title="Settings">⚙️</a>
 			<% } %>
-			<form id="logout-form" class="journal-control-button" action="/api/logout" method="POST">
-				<input type="submit" value="🚪" title="Logout">
+			<form
+				id="logout-form"
+				class="journal-control-button"
+				action="/api/logout"
+				method="POST"
+			>
+				<input type="submit" value="🚪" title="Logout" />
 			</form>
 		</nav>
 		<main id="journal-content">
 			<div id="journal-goto">
-				<a href="#journal-section-id-<%= journal.sections.length - 1 %>">Go to the latest update <%= journal.sections[journal.sections.length - 1]?.date ? " (" + journal.sections[journal.sections.length - 1].date + ") ": ""%>🌀</a>
+				<a href="#journal-section-id-<%= journal.sections.length - 1 %>"
+					>Go to the latest update <%= journal.sections[journal.sections.length
+					- 1]?.date ? " (" + journal.sections[journal.sections.length - 1].date
+					+ ") ": ""%>🌀</a
+				>
 			</div>
-			<% journal.sections.forEach((section, i) => { %>
-				<%- include('section.html', { section: section, perms: perms, id: i }) %>
-			<% }) %>
-			<% if(perms?.write) { %>
+			<% journal.sections.forEach((section, i) => { %> <%-
+			include('section.html', { section: section, perms: perms, id: i }) %> <%
+			}) %> <% if(perms?.write) { %>
 			<div id="journal-controls">
-				<form class="journal-form-add journal-control-button" action="/api/createSection" method="POST">
-					<input type="submit" value="+">
+				<form
+					class="journal-form-add journal-control-button"
+					action="/api/createSection"
+					method="POST"
+				>
+					<input type="submit" value="+" />
 				</form>
 			</div>
 			<% } %>

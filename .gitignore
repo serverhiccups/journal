@@ -1,3 +1,4 @@
+.vscode/
 public/favicon.ico
 public/favicons/*
 public/js/widgets/*
@@ -35,7 +36,8 @@ public/widgets.css
 .LSOverride
 
 # Icon must end with two \r
-Icon
+Icon
+
 
 # Thumbnails
 ._*

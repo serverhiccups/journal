@@ -1,23 +1,30 @@
+<!DOCTYPE html>
 <html>
 	<head>
-		<meta charset="UTF-8">
+		<meta charset="UTF-8" />
 		<title>journal</title>
-		<link rel="stylesheet" href="normalize.css">
-		<link rel="stylesheet" href="style.css">
-		<meta name="viewport" content="width=device-width, initial-scale=1">
-		<meta name="robots" content="noindex">
+		<link rel="stylesheet" href="normalize.css" />
+		<link rel="stylesheet" href="style.css" />
+		<meta name="viewport" content="width=device-width, initial-scale=1" />
+		<meta name="robots" content="noindex" />
 	</head>
 	<body>
 		<div id="home-content">
 			<div id="home-contact">
-				<span>
-					To access this website, email <%= journal.contact %>
-				</span>
+				<span> To access this website, email <%= journal.contact %> </span>
 			</div>
 			<div id="home-form">
 				<form action="/api/login" method="POST">
-					<input type="text" autofocus autocomplete="off" spellcheck="false" autocorrect="off" placeholder="code" name="token">
-					<input type="submit" value="open">
+					<input
+						type="text"
+						autofocus
+						autocomplete="off"
+						spellcheck="false"
+						autocorrect="off"
+						placeholder="code"
+						name="token"
+					/>
+					<input type="submit" value="open" />
 				</form>
 				<% if(incorrect) { %>
 				<span id="home-incorrect">invalid code</span>
