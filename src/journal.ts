@@ -1,12 +1,12 @@
 import fs from "fs";
-import marked from "marked";
+import { marked } from "marked";
 import { imageRenderer, galleryExtension } from "./markedPlugin";
 
 marked.use({
-	renderer: imageRenderer
+	renderer: imageRenderer,
 });
 
-marked.use({extensions: [galleryExtension]});
+marked.use({ extensions: [galleryExtension] });
 
 interface Journal {
 	title: string;
@@ -37,7 +37,7 @@ export default class JournalManager {
 	}
 
 	readDB() {
-		this.db = JSON.parse(fs.readFileSync(this.dbPath, 'utf8'))
+		this.db = JSON.parse(fs.readFileSync(this.dbPath, "utf8"));
 	}
 
 	writeDB() {
@@ -46,12 +46,15 @@ export default class JournalManager {
 
 	addSection() {
 		this.updateSection(this.db.sections.length, {
-			markdown: ""
-		})
+			markdown: "",
+		});
 	}
 
 	updateSection(sectionId: number, section: Section): number {
-		this.db.sections[sectionId] = {...section, html: marked(section.markdown)};
+		this.db.sections[sectionId] = {
+			...section,
+			html: marked(section.markdown),
+		};
 		return sectionId;
 	}
 
@@ -65,18 +68,24 @@ export default class JournalManager {
 	}
 
 	sectionUp(sectionId: number): number {
-		if(sectionId < 0 || sectionId > this.db.sections.length - 1) return;
-		if(sectionId == 0) return; // Can't move an item at the top up.
+		if (sectionId < 0 || sectionId > this.db.sections.length - 1) return;
+		if (sectionId == 0) return; // Can't move an item at the top up.
 		// Swap the elements
-		[this.db.sections[sectionId], this.db.sections[sectionId - 1]] = [this.db.sections[sectionId - 1], this.db.sections[sectionId]]
+		[this.db.sections[sectionId], this.db.sections[sectionId - 1]] = [
+			this.db.sections[sectionId - 1],
+			this.db.sections[sectionId],
+		];
 		return sectionId - 1;
 	}
 
 	sectionDown(sectionId: number): number {
-		if(sectionId < 0 || sectionId > this.db.sections.length - 1) return;
-		if(sectionId == this.db.sections.length - 1) return; // Can't move an item at the bottom down.
+		if (sectionId < 0 || sectionId > this.db.sections.length - 1) return;
+		if (sectionId == this.db.sections.length - 1) return; // Can't move an item at the bottom down.
 		// Swap the elements
-		[this.db.sections[sectionId], this.db.sections[sectionId + 1]] = [this.db.sections[sectionId + 1], this.db.sections[sectionId]]
+		[this.db.sections[sectionId], this.db.sections[sectionId + 1]] = [
+			this.db.sections[sectionId + 1],
+			this.db.sections[sectionId],
+		];
 		return sectionId + 1;
 	}
 
@@ -89,7 +98,7 @@ export default class JournalManager {
 	}
 
 	updateAll() {
-		for(let i = 0; i < this.db.sections.length; i++) {
+		for (let i = 0; i < this.db.sections.length; i++) {
 			this.updateSection(i, this.db.sections[i]);
 		}
 	}
