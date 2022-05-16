@@ -1,6 +1,6 @@
 import imageSize from "probe-image-size";
-import { readFileSync } from "fs";
-import { resolve } from "path";
+import { readFileSync, existsSync } from "fs";
+import { resolve, parse } from "path";
 
 const imageRenderer = {
 	image(href: string, title: string | null, text: string) {
@@ -11,7 +11,17 @@ const imageRenderer = {
 		if (href.startsWith("images/")) {
 			// is probably a local file?
 			try {
-				const f = readFileSync(resolve("./public/" + decodeURIComponent(href)));
+				const newName =
+					"./public/images/optimised/" +
+					parse(decodeURIComponent(href).replace(/^(images\/)/, "")).name +
+					".jpeg";
+				let f = null;
+				if (existsSync(newName)) {
+					f = readFileSync(resolve(newName));
+					href = newName.substring(9);
+				} else {
+					f = readFileSync(resolve("./public/" + decodeURIComponent(href)));
+				}
 				const info = imageSize.sync(f);
 				if (info.orientation && info.orientation < 5) {
 					sizeHints.width = info.width;

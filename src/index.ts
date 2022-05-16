@@ -14,6 +14,7 @@ import range from "@masx200/koa-range";
 
 import TokenManager from "./tokens";
 import JournalManager from "./journal";
+import { optimise as optimseAsset } from "./optimiseAssets";
 
 const app = new koa();
 
@@ -125,6 +126,7 @@ api.post("/uploadImage", (ctx, next) => {
 				// @ts-ignore
 				const { path, name, type } = file;
 				fs.copyFileSync(path, `./public/images/${name}`);
+				optimseAsset(path, name);
 			});
 			ctx.redirect("/settings");
 		} catch (e) {
@@ -245,6 +247,24 @@ api.get("/downloadBackup", (ctx, next) => {
 		archive.finalize();
 
 		ctx.status = 200;
+	} else {
+		ctx.status = 403;
+		ctx.body = "Forbidden";
+	}
+});
+
+api.get("/optimiseAllImages", async (ctx, next) => {
+	if (ctx.session?.perms?.write) {
+		const files = await fs.promises.readdir(path.resolve("./public/images"), {
+			encoding: "utf8",
+		});
+		for (const file of files) {
+			optimseAsset(
+				path.resolve("./public/images/" + file),
+				path.parse(file).name
+			);
+		}
+		ctx.redirect("/settings");
 	} else {
 		ctx.status = 403;
 		ctx.body = "Forbidden";
