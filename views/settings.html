@@ -6,6 +6,7 @@
 		<link rel="stylesheet" href="normalize.css" />
 		<link rel="stylesheet" href="style.css" />
 		<meta name="viewport" content="width=device-width, initial-scale=1" />
+		<script src="js/fileUpload.js"></script>
 	</head>
 	<body>
 		<div id="nav">
@@ -29,6 +30,7 @@
 				<br />
 				<span>upload</span>
 				<form
+					id="image-upload"
 					action="/api/uploadImage"
 					method="POST"
 					enctype="multipart/form-data"
