@@ -10,13 +10,17 @@ const imageRenderer = {
 		};
 		if (href.startsWith("images/")) {
 			// is probably a local file?
-			console.log(`image with path ${href}`);
-			console.log(resolve("./public/" + href));
 			try {
 				const f = readFileSync(resolve("./public/" + decodeURIComponent(href)));
 				const info = imageSize.sync(f);
-				sizeHints.width = info.width;
-				sizeHints.height = info.height;
+				if (info.orientation && info.orientation < 5) {
+					sizeHints.width = info.width;
+					sizeHints.height = info.height;
+				} else {
+					// image is rotated;
+					sizeHints.width = info.height;
+					sizeHints.height = info.width;
+				}
 			} catch (err) {
 				console.error("oh noes!"); // TODO: replace with a div on the generated page
 				console.error(err);
@@ -24,7 +28,7 @@ const imageRenderer = {
 		}
 		return `
 			<figure class="img-container">
-				<img loading="lazy" src="${href}" alt="title" ${
+				<img loading="lazy" src="${href}" alt="${title}" ${
 			sizeHints.width ? 'width="' + sizeHints.width + '"' : ""
 		} ${sizeHints.height ? 'height="' + sizeHints.height + '"' : ""}>
 				${title != null ? `<figcaption>${title}</figcaption>` : ""}
