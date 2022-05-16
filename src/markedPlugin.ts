@@ -3,7 +3,12 @@ import { readFileSync, existsSync } from "fs";
 import { resolve, parse } from "path";
 
 const imageRenderer = {
-	image(href: string, title: string | null, text: string) {
+	image(
+		href: string,
+		title: string | null,
+		text?: string,
+		noContainer: boolean = false
+	) {
 		let sizeHints = {
 			width: null,
 			height: null,
@@ -37,12 +42,12 @@ const imageRenderer = {
 			}
 		}
 		return `
-			<figure class="img-container">
+			${noContainer ? "" : '<figure class="img-container"'}>
 				<img loading="lazy" src="${href}" alt="${title}" ${
 			sizeHints.width ? 'width="' + sizeHints.width + '"' : ""
 		} ${sizeHints.height ? 'height="' + sizeHints.height + '"' : ""}>
-				${title != null ? `<figcaption>${title}</figcaption>` : ""}
-			</figure>
+				${title != null && !noContainer ? `<figcaption>${title}</figcaption>` : ""}
+			${noContainer ? "" : "</figure>"}
 		 `;
 	},
 };
@@ -79,7 +84,7 @@ const galleryExtension = {
 			.map((i) => {
 				return `
 			<div class="image-gallery-slide">
-				<img loading="lazy" src="${i.href}" ${i.title ? 'alt="${i.title}"' : ""}">
+				${imageRenderer.image(i.href, i.title)}
 				${i.title ? `<span>${i.title}</span>` : ""}
 			</div>
 			`;
