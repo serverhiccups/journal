@@ -1,23 +1,35 @@
 import imageSize from "probe-image-size";
-import { readFileSync, existsSync } from "fs";
-import { resolve, parse } from "path";
+import { existsSync, readFileSync } from "fs";
+import { parse, resolve } from "path";
+import {
+	RendererObject,
+	TokenizerAndRendererExtension,
+	type Tokens,
+} from "marked";
 
 const imageRenderer = {
+	// image(
+	// 	href: string,
+	// 	title: string | null,
+	// 	text?: string,
+	// 	noContainer: boolean = false,
+	// ) {
 	image(
-		href: string,
-		title: string | null,
-		text?: string,
-		noContainer: boolean = false
+		token: Tokens.Image,
 	) {
-		let sizeHints = {
+		let { href, title } = token;
+		const noContainer = false;
+		let sizeHints: {
+			width: number | null;
+			height: number | null;
+		} = {
 			width: null,
 			height: null,
 		};
 		if (href.startsWith("images/")) {
 			// is probably a local file?
 			try {
-				const newName =
-					"./public/images/optimised/" +
+				const newName = "./public/images/optimised/" +
 					parse(decodeURIComponent(href).replace(/^(images\/)/, "")).name +
 					".jpeg";
 				let f = null;
@@ -28,6 +40,7 @@ const imageRenderer = {
 					f = readFileSync(resolve("./public/" + decodeURIComponent(href)));
 				}
 				const info = imageSize.sync(f);
+				if (info === null) throw new Error("could not read image size");
 				if (info.orientation && info.orientation < 5) {
 					sizeHints.width = info.width;
 					sizeHints.height = info.height;
@@ -46,19 +59,26 @@ const imageRenderer = {
 				<img loading="lazy" src="${href}" alt="${title}" ${
 			sizeHints.width ? 'width="' + sizeHints.width + '"' : ""
 		} ${sizeHints.height ? 'height="' + sizeHints.height + '"' : ""}>
-				${title != null && !noContainer ? `<figcaption>${title}</figcaption>` : ""}
+				${
+			title != null && !noContainer ? `<figcaption>${title}</figcaption>` : ""
+		}
 			${noContainer ? "" : "</figure>"}
 		 `;
 	},
 };
 
-const galleryExtension = {
+interface GalleryToken extends Tokens.Generic {
+	type: "gallery";
+	tokens: Tokens.Generic[];
+}
+
+const galleryExtension: TokenizerAndRendererExtension = {
 	name: "gallery",
-	level: "block",
+	level: "block" as const,
 	start(src: string) {
 		return src.match(/^\$\$/)?.index;
 	},
-	tokenizer(src: string, tokens: Array<any>) {
+	tokenizer(src) {
 		const rule = /^(?:\$\$)\n+((.|\n)*?)(?:\$\$)+/;
 		const match = rule.exec(src);
 		if (match) {
@@ -74,25 +94,28 @@ const galleryExtension = {
 			return token;
 		}
 	},
-	renderer(token: any) {
+	renderer(token) {
+		const gallery = token as GalleryToken;
 		return `
 		<div class="image-gallery">
-		${token.tokens
-			.filter((t) => {
-				return t.type == "image";
-			})
-			.map((i) => {
-				return `
+		${
+			gallery.tokens
+				.filter((t): t is Tokens.Image => {
+					return t.type == "image";
+				})
+				.map((i) => {
+					return `
 			<div class="image-gallery-slide">
-				${imageRenderer.image(i.href, i.title)}
+				${imageRenderer.image(i)}
 				${i.title ? `<span>${i.title}</span>` : ""}
 			</div>
 			`;
-			})
-			.join("")}
+				})
+				.join("")
+		}
 		</div>
 		`;
 	},
 };
 
-export { imageRenderer, galleryExtension };
+export { galleryExtension, imageRenderer };

@@ -1,6 +1,6 @@
 import sharp from "sharp";
-import { parse } from "path";
-import fs from "fs";
+import { parse } from "node:path";
+import fs from "node:fs";
 
 export async function optimise(path: string, name: string) {
 	try {
@@ -23,5 +23,7 @@ export async function optimise(path: string, name: string) {
 				mozjpeg: true,
 			})
 			.toFile("./public/images/optimised/" + parse(name).name + ".jpeg");
-	} catch (err) {}
+	} catch (err) {
+		console.log(err);
+	}
 }

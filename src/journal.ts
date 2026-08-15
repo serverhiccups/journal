@@ -1,6 +1,6 @@
-import fs from "fs";
+import fs from "node:fs";
 import { marked } from "marked";
-import { imageRenderer, galleryExtension } from "./markedPlugin";
+import { galleryExtension, imageRenderer } from "./markedPlugin.ts";
 
 marked.use({
 	renderer: imageRenderer,
@@ -12,6 +12,9 @@ interface Journal {
 	title: string;
 	contact: string;
 	sections: RenderedSection[];
+	portNumber: number;
+	faviconEmoji: string;
+	cookieKey: string;
 }
 
 interface RenderedSection {
@@ -33,10 +36,6 @@ export default class JournalManager {
 
 	constructor(dbPath: string) {
 		this.dbPath = dbPath;
-		this.readDB();
-	}
-
-	readDB() {
 		this.db = JSON.parse(fs.readFileSync(this.dbPath, "utf8"));
 	}
 
@@ -53,7 +52,7 @@ export default class JournalManager {
 	updateSection(sectionId: number, section: Section): number {
 		this.db.sections[sectionId] = {
 			...section,
-			html: marked(section.markdown),
+			html: marked(section.markdown, { async: false }),
 		};
 		return sectionId;
 	}
@@ -67,7 +66,7 @@ export default class JournalManager {
 		return this.db.sections.splice(sectionId, 1)[0];
 	}
 
-	sectionUp(sectionId: number): number {
+	sectionUp(sectionId: number): number | undefined {
 		if (sectionId < 0 || sectionId > this.db.sections.length - 1) return;
 		if (sectionId == 0) return; // Can't move an item at the top up.
 		// Swap the elements
@@ -78,7 +77,7 @@ export default class JournalManager {
 		return sectionId - 1;
 	}
 
-	sectionDown(sectionId: number): number {
+	sectionDown(sectionId: number): number | undefined {
 		if (sectionId < 0 || sectionId > this.db.sections.length - 1) return;
 		if (sectionId == this.db.sections.length - 1) return; // Can't move an item at the bottom down.
 		// Swap the elements

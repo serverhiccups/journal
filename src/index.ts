@@ -1,20 +1,22 @@
 import koa from "koa";
-import Router from "koa-router";
-import serve from "koa-better-serve";
-import path from "path";
+import Router from "@koa/router";
+import path from "node:path";
 import archiver from "archiver";
 import session from "koa-session";
-import koaBody from "koa-body";
-import views from "koa-views";
+import serve from "koa-static";
+import { bodyParser } from "@koa/bodyparser";
+import multer from "@koa/multer";
+import views from "@ladjs/koa-views";
 import ratelimit from "koa-ratelimit";
-import fs from "fs";
-import stream from "stream";
+import fs from "node:fs";
+import stream from "node:stream";
 import filesize from "file-size";
 import range from "@masx200/koa-range";
+import * as z from "zod";
 
-import TokenManager from "./tokens";
-import JournalManager from "./journal";
-import { optimise as optimseAsset } from "./optimiseAssets";
+import TokenManager from "./tokens.ts";
+import JournalManager from "./journal.ts";
+import { optimise as optimseAsset } from "./optimiseAssets.ts";
 
 const app = new koa();
 
@@ -26,23 +28,23 @@ process.on("SIGINT", () => {
 	process.exit(0);
 });
 
-//@ts-ignore
-app.keys = [journal.getJournal()["cookieKey"]];
+app.keys = [journal.getJournal().cookieKey];
 
 app.use(
 	session(
 		{
 			maxAge: 60 * 1000 * 60 * 60 * 24, // two months
 		},
-		app
-	)
+		app,
+	),
 );
 
-app.use(
-	koaBody({
-		multipart: true,
-	})
-);
+app.use(bodyParser({}));
+
+const upload = multer({
+	dest: Deno.makeTempDirSync(),
+	// TODO: Make sure filenames are encoded with utf8
+});
 
 const render = views(path.resolve("./views"), {
 	map: {
@@ -50,7 +52,6 @@ const render = views(path.resolve("./views"), {
 	},
 });
 
-// @ts-ignore
 app.use(render);
 
 const api = new Router({
@@ -64,8 +65,7 @@ const apiLimiter = ratelimit({
 	db: ratelimitDb,
 	duration: 1000 * 60 * 60 * 2, // 2 hours
 	errorMessage: "Too many API requests from this IP address. Try again later.",
-	//@ts-ignore
-	id: (ctx) => ctx.headers["x-forwarded-for"] || ctx.ip,
+	id: (ctx) => (ctx.headers["x-forwarded-for"] ?? ctx.ip).toString(),
 	max: 5,
 	disableHeader: true,
 	whitelist: (ctx) => {
@@ -75,19 +75,23 @@ const apiLimiter = ratelimit({
 
 api.use(apiLimiter);
 
-api.post("/login", (ctx, next) => {
+const Login = z.object({
+	token: z.string(),
+});
+
+api.post("/login", (ctx) => {
 	ctx.status = 200;
-	ctx.body = "blah";
-	if (ctx.request.body.token != undefined) {
+	const body = Login.parse(ctx.request.body);
+	if (body.token != undefined) {
 		//console.log("checking perms")
-		let perms = tokens.getPerms(ctx.request.body.token);
+		const perms = tokens.getPerms(body.token);
 		if (perms == undefined || !perms.read) {
 			ctx.session.lastIncorrect = true;
 			ctx.redirect("/");
 			return;
 		}
 		ctx.session.lastIncorrect = false;
-		ctx.session.token = ctx.request.body.token;
+		ctx.session.token = body.token;
 		ctx.session.perms = perms;
 		//console.log("logged in")
 		ctx.redirect("/journal");
@@ -95,43 +99,77 @@ api.post("/login", (ctx, next) => {
 	}
 });
 
-api.post("/logout", (ctx, next) => {
+api.post("/logout", (ctx) => {
 	ctx.session = null;
 	ctx.redirect("/");
 });
 
-api.post("/updatePerms", (ctx, next) => {
+const UpdatePerms = z.object({
+	token: z.string(),
+	perms: z.string(),
+	notes: z.string(),
+});
+
+api.post("/updatePerms", (ctx) => {
+	const body = UpdatePerms.parse(ctx.request.body);
 	if (ctx.request.body != undefined || ctx.session.perms.write) {
 		console.log(ctx.request.body);
-		tokens.setPerms(ctx.request.body.token, {
-			read:
-				ctx.request.body.perms == "readwrite" ||
-				ctx.request.body.perms == "read" ||
+		tokens.setPerms(body.token, {
+			read: body.perms == "readwrite" ||
+				body.perms == "read" ||
 				false,
-			write: ctx.request.body.perms == "readwrite" || false,
-			notes: ctx.request.body.notes,
+			write: body.perms == "readwrite" || false,
+			notes: body.notes,
 		});
 		ctx.redirect("/settings");
 	}
 });
 
-api.post("/uploadImage", (ctx, next) => {
+api.post(
+	"/uploadImage",
+	upload.fields([
+		{
+			name: "image",
+		},
+	]),
+	(ctx) => {
+		if (ctx.session?.perms?.write) {
+			if (ctx.request.files === undefined) return; // TODO: flesh out
+			const files = (ctx.request.files instanceof Array)
+				? ctx.request.files
+				: Object.values(ctx.request.files).flatMap((f) => f);
+			try {
+				files.forEach((file) => {
+					const { path, originalname } = file;
+					fs.copyFileSync(path, `./public/images/${originalname}`);
+					optimseAsset(path, originalname);
+				});
+				ctx.redirect("/settings");
+			} catch (e) {
+				console.error(e);
+				ctx.status = 500;
+				ctx.body = (e as Error)?.message;
+			}
+		} else {
+			ctx.status = 403;
+			ctx.body = "Forbidden";
+		}
+	},
+);
+
+const DeleteImage = z.object({
+	name: z.string(),
+});
+
+api.post("/deleteImage", (ctx) => {
+	const body = DeleteImage.parse(ctx.request.body);
 	if (ctx.session?.perms?.write) {
 		try {
-			let files: any[];
-			if (!(ctx.request.files.image instanceof Array)) {
-				files = [ctx.request.files.image];
-			} else files = ctx.request.files.image;
-			files.forEach((file: File) => {
-				// @ts-ignore
-				const { path, name, type } = file;
-				fs.copyFileSync(path, `./public/images/${name}`);
-				optimseAsset(path, name);
-			});
+			fs.rmSync(`./public/images/${body.name}`);
 			ctx.redirect("/settings");
 		} catch (e) {
 			ctx.status = 500;
-			ctx.body = e.message;
+			ctx.body = (e as Error)?.message;
 		}
 	} else {
 		ctx.status = 403;
@@ -139,22 +177,7 @@ api.post("/uploadImage", (ctx, next) => {
 	}
 });
 
-api.post("/deleteImage", (ctx, next) => {
-	if (ctx.session?.perms?.write) {
-		try {
-			fs.rmSync(`./public/images/${ctx.request.body.name}`);
-			ctx.redirect("/settings");
-		} catch (e) {
-			ctx.status = 500;
-			ctx.body = e.message;
-		}
-	} else {
-		ctx.status = 403;
-		ctx.body = "Forbidden";
-	}
-});
-
-api.post("/createSection", (ctx, next) => {
+api.post("/createSection", (ctx) => {
 	if (ctx.session?.perms?.write) {
 		journal.addSection();
 		ctx.redirect("/");
@@ -164,9 +187,14 @@ api.post("/createSection", (ctx, next) => {
 	}
 });
 
-api.post("/sectionUp", (ctx, next) => {
+const SingleSection = z.object({
+	id: z.string(),
+});
+
+api.post("/sectionUp", (ctx) => {
+	const body = SingleSection.parse(ctx.request.body);
 	if (ctx.session?.perms?.write) {
-		const newPos = journal.sectionUp(parseInt(ctx.request.body.id));
+		const newPos = journal.sectionUp(parseInt(body.id));
 		if (newPos != undefined) {
 			ctx.redirect(`/journal#journal-section-id-${newPos}`);
 		} else ctx.redirect("/journal");
@@ -176,9 +204,10 @@ api.post("/sectionUp", (ctx, next) => {
 	}
 });
 
-api.post("/sectionDown", (ctx, next) => {
+api.post("/sectionDown", (ctx) => {
+	const body = SingleSection.parse(ctx.request.body);
 	if (ctx.session?.perms?.write) {
-		const newPos = journal.sectionDown(parseInt(ctx.request.body.id));
+		const newPos = journal.sectionDown(parseInt(body.id));
 		if (newPos != undefined) {
 			ctx.redirect(`/journal#journal-section-id-${newPos}`);
 		} else ctx.redirect("/journal");
@@ -188,23 +217,32 @@ api.post("/sectionDown", (ctx, next) => {
 	}
 });
 
-api.post("/updateSection", (ctx, next) => {
+const UpdateSection = z.object({
+	id: z.string().transform((n) => parseInt(n)),
+	markdown: z.string(),
+	title: z.string(),
+	date: z.string(),
+});
+
+api.post("/updateSection", (ctx) => {
+	const body = UpdateSection.parse(ctx.request.body);
 	if (ctx.session?.perms?.write) {
-		journal.updateSection(ctx.request.body.id, {
-			markdown: ctx.request.body.markdown,
-			title: ctx.request.body.title,
-			date: ctx.request.body.date,
+		journal.updateSection(body.id, {
+			markdown: body.markdown,
+			title: body.title,
+			date: body.date,
 		});
-		ctx.redirect(`/journal#journal-section-id-${ctx.request.body.id}`);
+		ctx.redirect(`/journal#journal-section-id-${body.id}`);
 	} else {
 		ctx.status = 403;
 		ctx.body = "Forbidden";
 	}
 });
 
-api.post("/deleteSection", (ctx, next) => {
+api.post("/deleteSection", (ctx) => {
+	const body = SingleSection.parse(ctx.request.body);
 	if (ctx.session?.perms?.write) {
-		journal.removeSection(parseInt(ctx.request.body.id));
+		journal.removeSection(parseInt(body.id));
 		ctx.redirect("/journal");
 	} else {
 		ctx.status = 403;
@@ -212,7 +250,7 @@ api.post("/deleteSection", (ctx, next) => {
 	}
 });
 
-api.post("/updateAllSections", (ctx, next) => {
+api.post("/updateAllSections", (ctx) => {
 	if (ctx.session?.perms?.write) {
 		journal.updateAll();
 		ctx.redirect("/settings");
@@ -222,7 +260,7 @@ api.post("/updateAllSections", (ctx, next) => {
 	}
 });
 
-api.get("/downloadBackup", (ctx, next) => {
+api.get("/downloadBackup", (ctx) => {
 	if (ctx.session?.perms?.write) {
 		const archive = archiver("zip", {
 			zlib: { level: 3 },
@@ -253,7 +291,7 @@ api.get("/downloadBackup", (ctx, next) => {
 	}
 });
 
-api.get("/optimiseAllImages", async (ctx, next) => {
+api.get("/optimiseAllImages", async (ctx) => {
 	if (ctx.session?.perms?.write) {
 		const files = await fs.promises.readdir(path.resolve("./public/images"), {
 			encoding: "utf8",
@@ -261,7 +299,7 @@ api.get("/optimiseAllImages", async (ctx, next) => {
 		for (const file of files) {
 			optimseAsset(
 				path.resolve("./public/images/" + file),
-				path.parse(file).name
+				path.parse(file).name,
 			);
 		}
 		ctx.redirect("/settings");
@@ -271,7 +309,7 @@ api.get("/optimiseAllImages", async (ctx, next) => {
 	}
 });
 
-api.get("/authenticated", async (ctx) => {
+api.get("/authenticated", (ctx) => {
 	if (ctx.session?.perms?.read) {
 		ctx.status = 200;
 	} else ctx.status = 403;
@@ -282,65 +320,58 @@ app.use(api.routes());
 
 const pages = new Router();
 
-pages.get("/index.html", async (ctx, next) => {
+pages.get("/index.html", (ctx, next) => {
 	ctx.redirect("/");
 });
 
-pages.get("/", async (ctx, next) => {
+pages.get("/", async (ctx) => {
 	if (ctx.session?.perms?.read) ctx.redirect("/journal");
-	// @ts-ignore
 	await ctx.render("index", {
 		journal: journal.getJournal(),
-		incorrect:
-			ctx.session.lastIncorrect == undefined
-				? false
-				: ctx.session.lastIncorrect,
+		incorrect: ctx.session.lastIncorrect == undefined
+			? false
+			: ctx.session.lastIncorrect,
 	});
 });
 
-pages.get("/journal", async (ctx, next) => {
+pages.get("/journal", async (ctx) => {
 	if (!ctx.session?.perms?.read) {
 		ctx.redirect("/");
 	}
-	// @ts-ignore
 	await ctx.render("journal", {
 		journal: journal.getJournal(),
 		perms: ctx.session?.perms,
 	});
 });
 
-pages.get("/settings", async (ctx, next) => {
+pages.get("/settings", async (ctx) => {
 	if (ctx.session?.perms?.write) {
-		let dir = fs
+		const dir = fs
 			.readdirSync("./public/images/", { withFileTypes: true })
 			.filter((f) => {
 				return f.isFile();
 			});
-		let imagesAndTime = dir.map((f) => {
-			let stat = fs.statSync("./public/images/" + f.name);
-			return [
-				stat.mtimeMs,
-				[
-					f.name,
-					new Date(stat.mtimeMs).toLocaleDateString([
-						"en-NZ",
-						"en-UK",
-						"en-US",
-					]),
-					new Date(stat.mtimeMs).toLocaleTimeString(),
-					filesize(stat.size).human("si"),
-				],
-			];
+		const imagesAndTime = dir.map((f) => {
+			const stat = fs.statSync("./public/images/" + f.name);
+			return {
+				modifiedTimeMs: stat.mtimeMs,
+				name: f.name,
+				modifiedDateString: new Date(stat.mtimeMs).toLocaleDateString([
+					"en-NZ",
+					"en-UK",
+					"en-US",
+				]),
+				modifiedTimeString: new Date(stat.mtimeMs).toLocaleTimeString(),
+				size: filesize(stat.size).human("si"),
+			};
 		});
-		imagesAndTime.sort((a: any, b: any) => {
-			return a[0] - b[0];
+		imagesAndTime.sort((a, b) => {
+			return a.modifiedTimeMs - b.modifiedTimeMs;
 		});
-		let images = imagesAndTime.map((i) => i[1]);
 
-		// @ts-ignore
 		await ctx.render("settings", {
 			journal: journal.getJournal(),
-			images: images,
+			images: imagesAndTime,
 			tokens: tokens.getAll(),
 			currentToken: ctx.session.token,
 		});
@@ -353,7 +384,6 @@ app.use(pages.routes());
 //app.use(pages.allowedMethods());
 
 app.use(range);
-app.use(serve(path.resolve("./public"), "/"));
+app.use(serve(path.resolve("./public")));
 
-//@ts-ignore
 app.listen(journal.getJournal().portNumber, "127.0.0.1");

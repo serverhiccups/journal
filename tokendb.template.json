@@ -1,0 +1,6 @@
+{
+	"admin": {
+		"read": true,
+		"write": true
+	}
+}

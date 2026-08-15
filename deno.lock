@@ -1,0 +1,43 @@
+{
+  "version": "5",
+  "specifiers": {
+    "jsr:@deno/installer-shell-setup@*": "0.3.4"
+  },
+  "jsr": {
+    "@deno/installer-shell-setup@0.3.4": {
+      "integrity": "48665d1a737d487cce6874bc97bba70a5aeffa7053aca3f60df93c6fab8963b4"
+    }
+  },
+  "workspace": {
+    "packageJson": {
+      "dependencies": [
+        "npm:@koa/bodyparser@^6.1.0",
+        "npm:@koa/multer@4",
+        "npm:@koa/router@15",
+        "npm:@ladjs/koa-views@9",
+        "npm:@masx200/koa-range@^1.0.4",
+        "npm:@types/archiver@^5.1.1",
+        "npm:@types/file-size@^1.0.1",
+        "npm:@types/koa-ratelimit@^5.0.5",
+        "npm:@types/koa-static@^4.0.4",
+        "npm:@types/koa__multer@^2.0.8",
+        "npm:@types/probe-image-size@^7.0.1",
+        "npm:@types/sharp@~0.30.2",
+        "npm:archiver@^5.3.0",
+        "npm:ejs@^3.1.7",
+        "npm:file-size@1",
+        "npm:koa-mount@^4.2.0",
+        "npm:koa-ratelimit@6",
+        "npm:koa-session@^7.0.2",
+        "npm:koa-static@5",
+        "npm:koa@^2.13.1",
+        "npm:marked@^18.0.9",
+        "npm:multer@^2.2.0",
+        "npm:probe-image-size@^7.2.3",
+        "npm:sharp@~0.35.3",
+        "npm:typescript@^7.0.2",
+        "npm:zod@^4.4.3"
+      ]
+    }
+  }
+}
