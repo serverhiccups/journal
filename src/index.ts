@@ -21,14 +21,18 @@ import { optimise as optimseAsset } from "./optimiseAssets.ts";
 const app = new koa();
 
 const tokens = new TokenManager("./tokendb.json");
-const journal = new JournalManager("./journaldb.json");
+const journal = new JournalManager();
 process.on("SIGINT", () => {
 	tokens.writeDB();
-	journal.writeDB();
 	process.exit(0);
 });
 
-app.keys = [journal.getJournal().cookieKey];
+const requiredEnv = ["DB_FILE_NAME", "COOKIE_KEY", "PORT_NUMBER"];
+requiredEnv.forEach((v) => {
+	if (!Deno.env.has(v)) throw new Error(`Environment variable ${v} was empty`);
+});
+
+app.keys = [Deno.env.get("COOKIE_KEY")!];
 
 app.use(
 	session(
@@ -177,9 +181,9 @@ api.post("/deleteImage", (ctx) => {
 	}
 });
 
-api.post("/createSection", (ctx) => {
+api.post("/createSection", async (ctx) => {
 	if (ctx.session?.perms?.write) {
-		journal.addSection();
+		await journal.addSection();
 		ctx.redirect("/");
 	} else {
 		ctx.status = 403;
@@ -191,26 +195,22 @@ const SingleSection = z.object({
 	id: z.string(),
 });
 
-api.post("/sectionUp", (ctx) => {
+api.post("/sectionUp", async (ctx) => {
 	const body = SingleSection.parse(ctx.request.body);
 	if (ctx.session?.perms?.write) {
-		const newPos = journal.sectionUp(parseInt(body.id));
-		if (newPos != undefined) {
-			ctx.redirect(`/journal#journal-section-id-${newPos}`);
-		} else ctx.redirect("/journal");
+		await journal.sectionUp(parseInt(body.id));
+		ctx.redirect(`/journal#journal-section-id-${body.id}`);
 	} else {
 		ctx.status = 403;
 		ctx.body = "Forbidden";
 	}
 });
 
-api.post("/sectionDown", (ctx) => {
+api.post("/sectionDown", async (ctx) => {
 	const body = SingleSection.parse(ctx.request.body);
 	if (ctx.session?.perms?.write) {
-		const newPos = journal.sectionDown(parseInt(body.id));
-		if (newPos != undefined) {
-			ctx.redirect(`/journal#journal-section-id-${newPos}`);
-		} else ctx.redirect("/journal");
+		await journal.sectionDown(parseInt(body.id));
+		ctx.redirect(`/journal#journal-section-id-${body.id}`);
 	} else {
 		ctx.status = 403;
 		ctx.body = "Forbidden";
@@ -277,8 +277,11 @@ api.get("/downloadBackup", (ctx) => {
 		ctx.body = s;
 
 		archive.pipe(s);
-		archive.append(JSON.stringify(journal.getJournal()), {
-			name: "journaldb.json",
+		// archive.append(JSON.stringify(journal.getJournal()), {
+		// 	name: "journaldb.json",
+		// });
+		archive.append(JSON.stringify(tokens.getAll()), {
+			name: "tokendb.json",
 		});
 		archive.directory("./public/images/", "/images");
 
@@ -327,7 +330,7 @@ pages.get("/index.html", (ctx, next) => {
 pages.get("/", async (ctx) => {
 	if (ctx.session?.perms?.read) ctx.redirect("/journal");
 	await ctx.render("index", {
-		journal: journal.getJournal(),
+		metadata: await journal.getMetadata(),
 		incorrect: ctx.session.lastIncorrect == undefined
 			? false
 			: ctx.session.lastIncorrect,
@@ -339,7 +342,9 @@ pages.get("/journal", async (ctx) => {
 		ctx.redirect("/");
 	}
 	await ctx.render("journal", {
-		journal: journal.getJournal(),
+		metadata: await journal.getMetadata(),
+		sections: await journal.getAll(),
+		latestPost: await journal.getLatestSection(),
 		perms: ctx.session?.perms,
 	});
 });
@@ -370,7 +375,7 @@ pages.get("/settings", async (ctx) => {
 		});
 
 		await ctx.render("settings", {
-			journal: journal.getJournal(),
+			metadata: await journal.getMetadata(),
 			images: imagesAndTime,
 			tokens: tokens.getAll(),
 			currentToken: ctx.session.token,
@@ -386,4 +391,4 @@ app.use(pages.routes());
 app.use(range);
 app.use(serve(path.resolve("./public")));
 
-app.listen(journal.getJournal().portNumber, "127.0.0.1");
+app.listen(parseInt(Deno.env.get("PORT_NUMBER")!), "127.0.0.1");

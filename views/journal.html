@@ -2,15 +2,15 @@
 <html>
 	<head>
 		<meta charset="UTF-8" />
-		<title><%= journal.title %></title>
+		<title><%= metadata.title %></title>
 		<link rel="stylesheet" href="normalize.css" />
 		<link rel="stylesheet" href="style.css" />
 		<meta name="viewport" content="width=device-width, initial-scale=1" />
 		<script type="module" src="js/widgets.js"></script>
-		<% if(journal.faviconEmoji){ %>
+		<% if(metadata.faviconEmoji){ %>
 		<link
 			rel="icon"
-			href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22><%- journal.faviconEmoji %></text></svg>"
+			href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22><%- metadata.faviconEmoji %></text></svg>"
 		/>
 		<% } %>
 		<script src="js/trees.js"></script>
@@ -20,7 +20,7 @@
 	</head>
 	<body>
 		<nav id="nav">
-			<span id="nav-title"><%= journal.title %></span>
+			<span id="nav-title"><%= metadata.title %></span>
 			<% if(perms?.write) { %>
 			<a id="settings-link" href="/settings" title="Settings">⚙️</a>
 			<% } %>
@@ -35,14 +35,13 @@
 		</nav>
 		<main id="journal-content">
 			<div id="journal-goto">
-				<a href="#journal-section-id-<%= journal.sections.length - 1 %>"
-					>Go to the latest update <%= journal.sections[journal.sections.length
-					- 1]?.date ? " (" + journal.sections[journal.sections.length - 1].date
+				<a href="#journal-section-id-<%= latestPost.id %>"
+					>Go to the latest update <%= latestPost.date ? " (" + latestPost.date
 					+ ") ": ""%>🌀</a
 				>
 			</div>
-			<% journal.sections.forEach((section, i) => { %> <%-
-			include('section.html', { section: section, perms: perms, id: i }) %> <%
+			<% sections.forEach((section, i) => { %> <%-
+			include('section.html', { section: section, perms: perms }) %> <%
 			}) %> <% if(perms?.write) { %>
 			<div id="journal-controls">
 				<form

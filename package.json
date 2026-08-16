@@ -5,7 +5,8 @@
 	"main": "src/index.ts",
 	"scripts": {
 		"test": "echo \"Error: no test specified\" && exit 1",
-		"start": "deno --allow-all src/index.ts"
+		"start": "deno --allow-all --env-file src/index.ts",
+		"db:seed": "deno --allow-all --env-file src/seed.ts"
 	},
 	"type": "module",
 	"author": "serverhiccups",
@@ -16,6 +17,7 @@
 		"@koa/multer": "^4.0.0",
 		"@koa/router": "^15.0.0",
 		"@ladjs/koa-views": "^9.0.0",
+		"@libsql/client": "^0.17.4",
 		"@masx200/koa-range": "^1.0.4",
 		"@types/file-size": "^1.0.1",
 		"@types/koa__multer": "^2.0.8",
@@ -24,6 +26,7 @@
 		"@types/probe-image-size": "^7.0.1",
 		"@types/sharp": "^0.30.2",
 		"archiver": "^5.3.0",
+		"drizzle-orm": "^1.0.0-rc.4",
 		"ejs": "^3.1.7",
 		"file-size": "^1.0.0",
 		"koa": "^2.13.1",
@@ -39,6 +42,10 @@
 		"zod": "^4.4.3"
 	},
 	"devDependencies": {
-		"@types/archiver": "^5.1.1"
+		"@types/archiver": "^5.1.1",
+		"drizzle-kit": "^1.0.0-rc.4"
+	},
+	"allowScripts": {
+		"esbuild@0.25.12": true
 	}
 }
