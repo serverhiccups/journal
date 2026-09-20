@@ -20,10 +20,9 @@ import { optimise as optimseAsset } from "./optimiseAssets.ts";
 
 const app = new koa();
 
-const tokens = new TokenManager("./tokendb.json");
+const tokens = new TokenManager();
 const journal = new JournalManager();
 process.on("SIGINT", () => {
-	tokens.writeDB();
 	process.exit(0);
 });
 
@@ -83,12 +82,12 @@ const Login = z.object({
 	token: z.string(),
 });
 
-api.post("/login", (ctx) => {
+api.post("/login", async (ctx) => {
 	ctx.status = 200;
 	const body = Login.parse(ctx.request.body);
 	if (body.token != undefined) {
 		//console.log("checking perms")
-		const perms = tokens.getPerms(body.token);
+		const perms = await tokens.getPerms(body.token);
 		if (perms == undefined || !perms.read) {
 			ctx.session.lastIncorrect = true;
 			ctx.redirect("/");
@@ -116,8 +115,7 @@ const UpdatePerms = z.object({
 
 api.post("/updatePerms", (ctx) => {
 	const body = UpdatePerms.parse(ctx.request.body);
-	if (ctx.request.body != undefined || ctx.session.perms.write) {
-		console.log(ctx.request.body);
+	if (ctx.request.body != undefined && ctx.session.perms.write) {
 		tokens.setPerms(body.token, {
 			read: body.perms == "readwrite" ||
 				body.perms == "read" ||
@@ -280,9 +278,9 @@ api.get("/downloadBackup", (ctx) => {
 		// archive.append(JSON.stringify(journal.getJournal()), {
 		// 	name: "journaldb.json",
 		// });
-		archive.append(JSON.stringify(tokens.getAll()), {
-			name: "tokendb.json",
-		});
+		// archive.append(JSON.stringify(tokens.getAll()), {
+		// 	name: "tokendb.json",
+		// });
 		archive.directory("./public/images/", "/images");
 
 		archive.finalize();
@@ -377,7 +375,7 @@ pages.get("/settings", async (ctx) => {
 		await ctx.render("settings", {
 			metadata: await journal.getMetadata(),
 			images: imagesAndTime,
-			tokens: tokens.getAll(),
+			tokens: await tokens.getAll(),
 			currentToken: ctx.session.token,
 		});
 	} else {

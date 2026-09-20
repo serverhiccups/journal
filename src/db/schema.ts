@@ -19,7 +19,19 @@ export const sections = sqliteTable("sections", {
 	position: integer().notNull(), // Not unique because it means that we can't reorder things!
 });
 
-export const relations = defineRelations({ sections, journalTable }, (r) => ({
-	journalTable: {},
-	sections: {},
-}));
+export const PERMISSIONS = ["NONE", "READ", "READWRITE"] as const;
+
+export const tokens = sqliteTable("tokens", {
+	key: text().primaryKey(),
+	permissions: text({ enum: PERMISSIONS }).default("NONE").notNull(),
+	notes: text().notNull(),
+});
+
+export const relations = defineRelations(
+	{ sections, journalTable, tokens },
+	(_r) => ({
+		journalTable: {},
+		sections: {},
+		tokens: {},
+	}),
+);
