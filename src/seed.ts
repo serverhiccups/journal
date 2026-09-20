@@ -5,20 +5,22 @@ import { TokenInfo } from "./tokens.ts";
 
 const db = drizzle(Deno.env.get("DB_FILE_NAME")!, { relations });
 
+const journalJson: any = JSON.parse(
+	await Deno.readTextFile("./journaldb.json"),
+);
+
 const journal: typeof journalTable.$inferInsert = {
-	title: "Testing DB",
-	contact: "hello@email.net",
-	faviconEmoji: "X",
+	title: journalJson["title"],
+	contact: journalJson["contact"],
+	faviconEmoji: journalJson["faviconEmoji"],
 };
 
 await db.delete(journalTable);
 await db.insert(journalTable).values(journal);
 
-const f: any = JSON.parse(await Deno.readTextFile("./journaldb.json"));
-
 await db.delete(sections);
 await db.insert(sections).values(
-	f.sections.map((s: any, i: number) => ({ ...s, position: i })),
+	journalJson.sections.map((s: any, i: number) => ({ ...s, position: i })),
 );
 
 // console.log(await db.select().from(sections).all());
