@@ -40,9 +40,12 @@
 					+ ") ": ""%>🌀</a
 				>
 			</div>
-			<% sections.forEach((section, i) => { %> <%-
-			include('section.html', { section: section, perms: perms }) %> <%
-			}) %> <% if(perms?.write) { %>
+			<% sections.forEach((section, i) => { %>
+				<%-
+					include('section.html', { section: section, perms: perms })
+				%>
+			<% }) %>
+			<% if(perms?.write) { %>
 			<div id="journal-controls">
 				<form
 					class="journal-form-add journal-control-button"

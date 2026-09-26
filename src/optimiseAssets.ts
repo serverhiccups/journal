@@ -2,14 +2,15 @@ import sharp from "sharp";
 import { parse } from "node:path";
 import fs from "node:fs";
 
-export async function optimise(path: string, name: string) {
+export async function optimise(path: string) {
+	const name = parse(path).name;
 	try {
 		const image = sharp(path);
 		const metadata = await image.metadata();
 		if (
-			fs.existsSync("./public/images/optimised/" + parse(name).name + ".jpeg")
+			fs.existsSync("./public/images/optimised/" + name + ".jpeg")
 		) {
-			fs.rmSync("./public/images/optimised/" + parse(name).name + ".jpeg");
+			fs.rmSync("./public/images/optimised/" + name + ".jpeg");
 		}
 		await image
 			.withMetadata({
@@ -22,7 +23,7 @@ export async function optimise(path: string, name: string) {
 				progressive: true,
 				mozjpeg: true,
 			})
-			.toFile("./public/images/optimised/" + parse(name).name + ".jpeg");
+			.toFile("./public/images/optimised/" + name + ".jpeg");
 	} catch (err) {
 		console.log(err);
 	}

@@ -1,24 +1,34 @@
-import koa from "koa";
-import Router from "@koa/router";
+import { serveDir } from "@std/http/file-server";
 import path from "node:path";
 import archiver from "archiver";
-import session from "koa-session";
-import serve from "koa-static";
-import { bodyParser } from "@koa/bodyparser";
-import multer from "@koa/multer";
-import views from "@ladjs/koa-views";
-import ratelimit from "koa-ratelimit";
-import fs from "node:fs";
-import stream from "node:stream";
+import { Readable } from "node:stream";
 import filesize from "file-size";
-import range from "@masx200/koa-range";
 import * as z from "zod";
 
-import TokenManager from "./tokens.ts";
-import JournalManager from "./journal.ts";
-import { optimise as optimseAsset } from "./optimiseAssets.ts";
+import ejs from "ejs";
 
-const app = new koa();
+import { Hono, MiddlewareHandler } from "hono";
+import { getConnInfo, serveStatic } from "hono/deno";
+import { CookieStore, Session, sessionMiddleware } from "hono-sessions";
+import { rateLimiter } from "hono-rate-limiter";
+
+import TokenManager, { TokenInfo } from "./tokens.ts";
+import JournalManager from "./journal.ts";
+import { optimise as optimiseAsset } from "./optimiseAssets.ts";
+
+type SessionDataType = {
+	lastIncorrect: boolean;
+	token?: string;
+	perms?: TokenInfo;
+};
+
+type Env = {
+	Variables: {
+		session: Session<SessionDataType>;
+		session_key_rotation: boolean;
+	};
+};
+const app = new Hono<Env>();
 
 const tokens = new TokenManager();
 const journal = new JournalManager();
@@ -31,80 +41,105 @@ requiredEnv.forEach((v) => {
 	if (!Deno.env.has(v)) throw new Error(`Environment variable ${v} was empty`);
 });
 
-app.keys = [Deno.env.get("COOKIE_KEY")!];
+const requirePermission = (
+	permission: keyof Omit<TokenInfo, "notes">,
+): MiddlewareHandler => {
+	return async (c, next) => {
+		const session = c.get("session");
+
+		if (!session.get("perms")?.[permission]) {
+			c.status(403);
+			return c.text("Forbidden");
+		}
+
+		await next();
+	};
+};
+
+declare module "hono" {
+	interface ContextRenderer {
+		(
+			templateName: string,
+			options: Record<string, any>,
+		): Response | Promise<Response>;
+	}
+}
+
+const useTemplate = (): MiddlewareHandler => {
+	const views = path.resolve("./views");
+	return async (c, next) => {
+		c.setRenderer(
+			(templateName, options) => {
+				return c.html(
+					ejs.renderFile(views + "/" + templateName, options, {
+						strict: false,
+						root: views,
+					}),
+				);
+			},
+		);
+		await next();
+	};
+};
+
+const store = new CookieStore();
 
 app.use(
-	session(
-		{
-			maxAge: 60 * 1000 * 60 * 60 * 24, // two months
+	"*" as string,
+	sessionMiddleware({
+		store,
+		encryptionKey: Deno.env.get("COOKIE_KEY")!,
+		expireAfterSeconds: 60 * 1000 * 60 * 60 * 24, // two months
+		autoExtendExpiration: true,
+		cookieOptions: {
+			sameSite: "Lax",
+			path: "/",
+			httpOnly: true,
 		},
-		app,
-	),
+	}),
 );
 
-app.use(bodyParser({}));
+const api = new Hono<Env>();
 
-const upload = multer({
-	dest: Deno.makeTempDirSync(),
-	// TODO: Make sure filenames are encoded with utf8
-});
-
-const render = views(path.resolve("./views"), {
-	map: {
-		html: "ejs",
-	},
-});
-
-app.use(render);
-
-const api = new Router({
-	prefix: "/api",
-});
-
-const ratelimitDb = new Map();
-
-const apiLimiter = ratelimit({
-	driver: "memory",
-	db: ratelimitDb,
-	duration: 1000 * 60 * 60 * 2, // 2 hours
-	errorMessage: "Too many API requests from this IP address. Try again later.",
-	id: (ctx) => (ctx.headers["x-forwarded-for"] ?? ctx.ip).toString(),
-	max: 5,
-	disableHeader: true,
-	whitelist: (ctx) => {
-		return !!ctx.session?.perms?.read;
-	},
-});
-
-api.use(apiLimiter);
+api.use(
+	rateLimiter<Env>({
+		windowMs: 1000 * 60 * 60 * 2,
+		keyGenerator: (
+			ctx,
+		) => (ctx.req.header("x-forwarded-for") ??
+			getConnInfo(ctx).remote.address ?? ""),
+		limit: 15,
+		skip: (ctx) => !!ctx.get("session").get("perms")?.read,
+		standardHeaders: false,
+	}),
+);
 
 const Login = z.object({
 	token: z.string(),
 });
 
-api.post("/login", async (ctx) => {
-	ctx.status = 200;
-	const body = Login.parse(ctx.request.body);
+api.post("/login", async (c) => {
+	const body = Login.parse(await c.req.parseBody());
 	if (body.token != undefined) {
 		//console.log("checking perms")
 		const perms = await tokens.getPerms(body.token);
+		const session = c.get("session");
 		if (perms == undefined || !perms.read) {
-			ctx.session.lastIncorrect = true;
-			ctx.redirect("/");
-			return;
+			session.set("lastIncorrect", true);
+			return c.redirect("/");
 		}
-		ctx.session.lastIncorrect = false;
-		ctx.session.token = body.token;
-		ctx.session.perms = perms;
+		session.set("lastIncorrect", false);
+		session.set("token", body.token);
+		session.set("perms", perms);
 		//console.log("logged in")
-		ctx.redirect("/journal");
-		return;
+		return c.redirect("/journal");
 	}
 });
 
-api.post("/logout", (ctx) => {
-	ctx.session = null;
-	ctx.redirect("/");
+api.post("/logout", (c) => {
+	const session = c.get("session");
+	session.deleteSession();
+	return c.redirect("/");
 });
 
 const UpdatePerms = z.object({
@@ -113,48 +148,39 @@ const UpdatePerms = z.object({
 	notes: z.string(),
 });
 
-api.post("/updatePerms", (ctx) => {
-	const body = UpdatePerms.parse(ctx.request.body);
-	if (ctx.request.body != undefined && ctx.session.perms.write) {
-		tokens.setPerms(body.token, {
-			read: body.perms == "readwrite" ||
-				body.perms == "read" ||
-				false,
-			write: body.perms == "readwrite" || false,
-			notes: body.notes,
-		});
-		ctx.redirect("/settings");
-	}
+api.post("/updatePerms", requirePermission("write"), async (ctx) => {
+	const body = UpdatePerms.parse(await ctx.req.parseBody());
+	tokens.setPerms(body.token, {
+		read: body.perms == "readwrite" ||
+			body.perms == "read" ||
+			false,
+		write: body.perms == "readwrite" || false,
+		notes: body.notes,
+	});
+	return ctx.redirect("/settings");
 });
 
 api.post(
 	"/uploadImage",
-	upload.fields([
-		{
-			name: "image",
-		},
-	]),
-	(ctx) => {
-		if (ctx.session?.perms?.write) {
-			if (ctx.request.files === undefined) return; // TODO: flesh out
-			const files = (ctx.request.files instanceof Array)
-				? ctx.request.files
-				: Object.values(ctx.request.files).flatMap((f) => f);
-			try {
-				files.forEach((file) => {
-					const { path, originalname } = file;
-					fs.copyFileSync(path, `./public/images/${originalname}`);
-					optimseAsset(path, originalname);
-				});
-				ctx.redirect("/settings");
-			} catch (e) {
-				console.error(e);
-				ctx.status = 500;
-				ctx.body = (e as Error)?.message;
-			}
-		} else {
-			ctx.status = 403;
-			ctx.body = "Forbidden";
+	requirePermission("write"),
+	async (ctx) => {
+		const body = await ctx.req.parseBody({ all: true });
+		const value = body["image"];
+		const files = Array.isArray(value)
+			? value.filter((item): item is File => item instanceof File)
+			: value instanceof File
+			? [value]
+			: [];
+		try {
+			files.forEach((file) => {
+				const p = `./public/images/${file.name}`;
+				Deno.writeFile(p, file.stream());
+				optimiseAsset(p);
+			});
+			return ctx.redirect("/settings");
+		} catch (e) {
+			console.error(e);
+			return ctx.status(500);
 		}
 	},
 );
@@ -163,56 +189,36 @@ const DeleteImage = z.object({
 	name: z.string(),
 });
 
-api.post("/deleteImage", (ctx) => {
-	const body = DeleteImage.parse(ctx.request.body);
-	if (ctx.session?.perms?.write) {
-		try {
-			fs.rmSync(`./public/images/${body.name}`);
-			ctx.redirect("/settings");
-		} catch (e) {
-			ctx.status = 500;
-			ctx.body = (e as Error)?.message;
-		}
-	} else {
-		ctx.status = 403;
-		ctx.body = "Forbidden";
+api.post("/deleteImage", requirePermission("write"), async (ctx) => {
+	const body = DeleteImage.parse(await ctx.req.parseBody());
+	try {
+		await Deno.remove(`./public/images/${body.name}`);
+		return ctx.redirect("/settings");
+	} catch (e) {
+		ctx.status(500);
+		ctx.text((e as Error)?.message);
 	}
 });
 
-api.post("/createSection", async (ctx) => {
-	if (ctx.session?.perms?.write) {
-		await journal.addSection();
-		ctx.redirect("/");
-	} else {
-		ctx.status = 403;
-		ctx.body = "Forbidden";
-	}
+api.post("/createSection", requirePermission("write"), async (ctx) => {
+	await journal.addSection();
+	return ctx.redirect("/");
 });
 
 const SingleSection = z.object({
 	id: z.string(),
 });
 
-api.post("/sectionUp", async (ctx) => {
-	const body = SingleSection.parse(ctx.request.body);
-	if (ctx.session?.perms?.write) {
-		await journal.sectionUp(parseInt(body.id));
-		ctx.redirect(`/journal#journal-section-id-${body.id}`);
-	} else {
-		ctx.status = 403;
-		ctx.body = "Forbidden";
-	}
+api.post("/sectionUp", requirePermission("write"), async (ctx) => {
+	const body = SingleSection.parse(await ctx.req.parseBody());
+	await journal.sectionUp(parseInt(body.id));
+	return ctx.redirect(`/journal#journal-section-id-${body.id}`);
 });
 
-api.post("/sectionDown", async (ctx) => {
-	const body = SingleSection.parse(ctx.request.body);
-	if (ctx.session?.perms?.write) {
-		await journal.sectionDown(parseInt(body.id));
-		ctx.redirect(`/journal#journal-section-id-${body.id}`);
-	} else {
-		ctx.status = 403;
-		ctx.body = "Forbidden";
-	}
+api.post("/sectionDown", requirePermission("write"), async (ctx) => {
+	const body = SingleSection.parse(await ctx.req.parseBody());
+	await journal.sectionDown(parseInt(body.id));
+	return ctx.redirect(`/journal#journal-section-id-${body.id}`);
 });
 
 const UpdateSection = z.object({
@@ -222,171 +228,150 @@ const UpdateSection = z.object({
 	date: z.string(),
 });
 
-api.post("/updateSection", (ctx) => {
-	const body = UpdateSection.parse(ctx.request.body);
-	if (ctx.session?.perms?.write) {
-		journal.updateSection(body.id, {
-			markdown: body.markdown,
-			title: body.title,
-			date: body.date,
-		});
-		ctx.redirect(`/journal#journal-section-id-${body.id}`);
-	} else {
-		ctx.status = 403;
-		ctx.body = "Forbidden";
+api.post("/updateSection", requirePermission("write"), async (ctx) => {
+	const body = UpdateSection.parse(await ctx.req.parseBody());
+	journal.updateSection(body.id, {
+		markdown: body.markdown,
+		title: body.title,
+		date: body.date,
+	});
+	return ctx.redirect(`/journal#journal-section-id-${body.id}`);
+});
+
+api.post("/deleteSection", requirePermission("write"), async (ctx) => {
+	const body = SingleSection.parse(await ctx.req.parseBody());
+	journal.removeSection(parseInt(body.id));
+	return ctx.redirect("/journal");
+});
+
+api.post("/updateAllSections", requirePermission("write"), async (ctx) => {
+	await journal.updateAll();
+	return ctx.redirect("/settings");
+});
+
+api.get("/downloadBackup", requirePermission("write"), async (ctx) => {
+	const archive = archiver("zip", {
+		zlib: { level: 3 },
+	});
+
+	archive.on("error", (err) => {
+		throw err;
+	});
+
+	// archive.append(JSON.stringify(journal.getJournal()), {
+	// 	name: "journaldb.json",
+	// });
+	archive.append(JSON.stringify(tokens.getAll()), {
+		name: "tokendb.json",
+	});
+	archive.directory("./public/images/", "/images");
+	archive.directory("./public/widgets/", "/widgets");
+
+	archive.finalize();
+
+	return ctx.body(Readable.toWeb(archive), 200, {
+		"Content-Type": "application/json",
+		"Content-Disposition": "attachment; filename=backup.zip",
+	});
+});
+
+api.get("/optimiseAllImages", requirePermission("write"), async (ctx) => {
+	const files = Deno.readDir(path.resolve("./public/images"));
+	for await (const file of files) {
+		optimiseAsset(
+			path.resolve("./public/images/" + file),
+		);
 	}
+	return ctx.redirect("/settings");
 });
 
-api.post("/deleteSection", (ctx) => {
-	const body = SingleSection.parse(ctx.request.body);
-	if (ctx.session?.perms?.write) {
-		journal.removeSection(parseInt(body.id));
-		ctx.redirect("/journal");
-	} else {
-		ctx.status = 403;
-		ctx.body = "Forbidden";
-	}
+api.get("/authenticated", requirePermission("read"), async (ctx) => {
+	return ctx.status(200);
 });
 
-api.post("/updateAllSections", (ctx) => {
-	if (ctx.session?.perms?.write) {
-		journal.updateAll();
-		ctx.redirect("/settings");
-	} else {
-		ctx.status = 403;
-		ctx.body = "Forbidden";
-	}
-});
+const pages = new Hono<Env>();
+pages.use("*", useTemplate());
 
-api.get("/downloadBackup", (ctx) => {
-	if (ctx.session?.perms?.write) {
-		const archive = archiver("zip", {
-			zlib: { level: 3 },
-		});
-
-		archive.on("error", (err) => {
-			throw err;
-		});
-
-		ctx.type = "application/zip";
-		ctx.attachment("backup.zip");
-
-		const s = new stream.PassThrough();
-		ctx.body = s;
-
-		archive.pipe(s);
-		// archive.append(JSON.stringify(journal.getJournal()), {
-		// 	name: "journaldb.json",
-		// });
-		// archive.append(JSON.stringify(tokens.getAll()), {
-		// 	name: "tokendb.json",
-		// });
-		archive.directory("./public/images/", "/images");
-
-		archive.finalize();
-
-		ctx.status = 200;
-	} else {
-		ctx.status = 403;
-		ctx.body = "Forbidden";
-	}
-});
-
-api.get("/optimiseAllImages", async (ctx) => {
-	if (ctx.session?.perms?.write) {
-		const files = await fs.promises.readdir(path.resolve("./public/images"), {
-			encoding: "utf8",
-		});
-		for (const file of files) {
-			optimseAsset(
-				path.resolve("./public/images/" + file),
-				path.parse(file).name,
-			);
-		}
-		ctx.redirect("/settings");
-	} else {
-		ctx.status = 403;
-		ctx.body = "Forbidden";
-	}
-});
-
-api.get("/authenticated", (ctx) => {
-	if (ctx.session?.perms?.read) {
-		ctx.status = 200;
-	} else ctx.status = 403;
-});
-
-app.use(api.routes());
-//app.use(api.allowedMethods());
-
-const pages = new Router();
-
-pages.get("/index.html", (ctx, next) => {
-	ctx.redirect("/");
+pages.get("/index.html", (ctx) => {
+	return ctx.redirect("/");
 });
 
 pages.get("/", async (ctx) => {
-	if (ctx.session?.perms?.read) ctx.redirect("/journal");
-	await ctx.render("index", {
+	if (ctx.get("session").get("perms")?.read) ctx.redirect("/journal");
+	const session = ctx.get("session");
+	return await ctx.render("index.html", {
 		metadata: await journal.getMetadata(),
-		incorrect: ctx.session.lastIncorrect == undefined
+		incorrect: session.get("lastIncorrect") == undefined
 			? false
-			: ctx.session.lastIncorrect,
+			: session.get("lastIncorrect"),
 	});
 });
 
 pages.get("/journal", async (ctx) => {
-	if (!ctx.session?.perms?.read) {
-		ctx.redirect("/");
+	const session = ctx.get("session");
+	if (!session.get("perms")?.read) {
+		return ctx.redirect("/");
 	}
-	await ctx.render("journal", {
+	return await ctx.render("journal.html", {
 		metadata: await journal.getMetadata(),
 		sections: await journal.getAll(),
 		latestPost: await journal.getLatestSection(),
-		perms: ctx.session?.perms,
+		perms: session.get("perms"),
 	});
 });
 
-pages.get("/settings", async (ctx) => {
-	if (ctx.session?.perms?.write) {
-		const dir = fs
-			.readdirSync("./public/images/", { withFileTypes: true })
-			.filter((f) => {
-				return f.isFile();
-			});
-		const imagesAndTime = dir.map((f) => {
-			const stat = fs.statSync("./public/images/" + f.name);
-			return {
-				modifiedTimeMs: stat.mtimeMs,
-				name: f.name,
-				modifiedDateString: new Date(stat.mtimeMs).toLocaleDateString([
-					"en-NZ",
-					"en-UK",
-					"en-US",
-				]),
-				modifiedTimeString: new Date(stat.mtimeMs).toLocaleTimeString(),
-				size: filesize(stat.size).human("si"),
-			};
-		});
-		imagesAndTime.sort((a, b) => {
-			return a.modifiedTimeMs - b.modifiedTimeMs;
-		});
+pages.get("/settings", requirePermission("write"), async (ctx) => {
+	const dir = Deno
+		.readDirSync("./public/images/")
+		.filter((f) => f.isFile);
+	const imagesAndTime = dir.map((f) => {
+		const stat = Deno.statSync("./public/images/" + f.name);
+		return {
+			modifiedTimeMs: stat.mtime?.valueOf(),
+			name: f.name,
+			modifiedDateString: stat.mtime?.toLocaleDateString([
+				"en-NZ",
+				"en-UK",
+				"en-US",
+			]),
+			modifiedTimeString: stat.mtime?.toLocaleTimeString(),
+			size: filesize(stat.size).human("si"),
+		};
+	}).toArray();
+	imagesAndTime.sort((a, b) => {
+		if (a.modifiedTimeMs === undefined) return 1;
+		if (b.modifiedTimeMs === undefined) return -1;
+		return a.modifiedTimeMs - b.modifiedTimeMs;
+	});
 
-		await ctx.render("settings", {
-			metadata: await journal.getMetadata(),
-			images: imagesAndTime,
-			tokens: await tokens.getAll(),
-			currentToken: ctx.session.token,
-		});
-	} else {
-		ctx.redirect("/");
-	}
+	return await ctx.render("settings.html", {
+		metadata: await journal.getMetadata(),
+		images: imagesAndTime,
+		tokens: await tokens.getAll(),
+		currentToken: ctx.get("session").get("token"),
+	});
 });
 
-app.use(pages.routes());
-//app.use(pages.allowedMethods());
+const serveDenoStatic = (fsRoot: string): MiddlewareHandler => {
+	return async (c) => {
+		return serveDir(c.req.raw, {
+			urlRoot: "images/",
+			fsRoot,
+		});
+	};
+};
 
-app.use(range);
-app.use(serve(path.resolve("./public")));
+const composedApp = app
+	.route("/", pages)
+	.route("/api", api)
+	.use(
+		"/images/*",
+		requirePermission("read"),
+		serveDenoStatic("./public/images"),
+	)
+	.use("*", serveStatic({ root: "./public/" }));
 
-app.listen(parseInt(Deno.env.get("PORT_NUMBER")!), "127.0.0.1");
+Deno.serve({
+	port: parseInt(Deno.env.get("PORT_NUMBER")!),
+	hostname: "127.0.0.1",
+}, composedApp.fetch);
